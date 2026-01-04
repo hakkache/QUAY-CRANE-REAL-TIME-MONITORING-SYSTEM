@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quay Crane Monitoring - System Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #0f0f17;
+            --bg-tertiary: #151520;
+            --bg-card: #1a1a28;
+            --bg-hover: #22223a;
+            
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            
+            --kafka-orange: #ff6b35;
+            --kafka-dark: #1a0f0a;
+            --spark-orange: #e25a1c;
+            --spark-yellow: #f7b500;
+            --spark-dark: #1a120a;
+            --elastic-yellow: #fed10a;
+            --elastic-teal: #00bfb3;
+            --elastic-dark: #1a1a0a;
+            --kibana-pink: #f04e98;
+            --logstash-green: #00bfb3;
+            --python-blue: #3776ab;
+            --python-yellow: #ffd43b;
+            --python-dark: #0a1220;
+            --prometheus-orange: #e6522c;
+            --grafana-orange: #f46800;
+            --monitoring-dark: #1a0f0a;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a40;
+            --border-light: #3a3a55;
+            
+            --glow-cyan: rgba(6, 182, 212, 0.4);
+            --glow-orange: rgba(255, 107, 53, 0.4);
+            --glow-yellow: rgba(254, 209, 10, 0.4);
+            --glow-purple: rgba(139, 92, 246, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background Effects */
+        .bg-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-gradient {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.5;
+        }
+
+        .bg-gradient-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.15), transparent 70%);
+            top: -200px;
+            left: -100px;
+            animation: float1 20s ease-in-out infinite;
+        }
+
+        .bg-gradient-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12), transparent 70%);
+            top: 30%;
+            right: -100px;
+            animation: float2 25s ease-in-out infinite;
+        }
+
+        .bg-gradient-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.1), transparent 70%);
+            bottom: -100px;
+            left: 30%;
+            animation: float3 22s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(50px, 30px); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, 50px); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, -30px); }
+        }
+
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            background: rgba(15, 15, 23, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--kafka-orange), var(--accent-purple));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.25);
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .header-stat {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .flow-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flow-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .flow-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .flow-btn.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .flow-btn-icon {
+            font-size: 1.1rem;
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+        }
+
+        /* Section Title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Architecture Grid */
+        .architecture-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Layer Row */
+        .layer-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .layer-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-left: 0.5rem;
+        }
+
+        .layer-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .layer-number.source { background: var(--python-dark); color: var(--python-yellow); border: 1px solid var(--python-blue); }
+        .layer-number.kafka { background: var(--kafka-dark); color: var(--kafka-orange); border: 1px solid var(--kafka-orange); }
+        .layer-number.processing { background: linear-gradient(135deg, var(--spark-dark), var(--elastic-dark)); color: var(--spark-orange); border: 1px solid var(--spark-orange); }
+        .layer-number.monitoring { background: var(--monitoring-dark); color: var(--prometheus-orange); border: 1px solid var(--prometheus-orange); }
+
+        .layer-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .layer-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Flow Connector */
+        .flow-connector {
+            display: flex;
+            justify-content: center;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .flow-line {
+            width: 3px;
+            height: 50px;
+            background: linear-gradient(180deg, var(--border-light), var(--accent-cyan), var(--border-light));
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .flow-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--glow-cyan);
+            animation: flowPulse 2s ease-in-out infinite;
+        }
+
+        .flow-line.active::before {
+            animation: flowMove 1.5s ease-in-out infinite;
+        }
+
+        @keyframes flowPulse {
+            0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(0.8); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.2); }
+        }
+
+        @keyframes flowMove {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .flow-label {
+            position: absolute;
+            left: calc(50% + 20px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        /* Component Cards Container */
+        .components-row {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .components-row.single {
+            justify-content: center;
+        }
+
+        .components-row.dual {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Component Card */
+        .component-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .component-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .component-card.source::before { background: linear-gradient(90deg, var(--python-blue), var(--python-yellow)); }
+        .component-card.kafka::before { background: linear-gradient(90deg, var(--kafka-orange), var(--accent-orange)); }
+        .component-card.spark::before { background: linear-gradient(90deg, var(--spark-orange), var(--spark-yellow)); }
+        .component-card.elk::before { background: linear-gradient(90deg, var(--elastic-yellow), var(--elastic-teal), var(--kibana-pink)); }
+        .component-card.monitoring::before { background: linear-gradient(90deg, var(--prometheus-orange), var(--grafana-orange)); }
+
+        .component-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--border-light);
+        }
+
+        .component-card.source:hover { box-shadow: 0 20px 60px rgba(55, 118, 171, 0.25); }
+        .component-card.kafka:hover { box-shadow: 0 20px 60px rgba(255, 107, 53, 0.25); }
+        .component-card.spark:hover { box-shadow: 0 20px 60px rgba(226, 90, 28, 0.25); }
+        .component-card.elk:hover { box-shadow: 0 20px 60px rgba(254, 209, 10, 0.25); }
+        .component-card.monitoring:hover { box-shadow: 0 20px 60px rgba(230, 82, 44, 0.25); }
+
+        .component-card.expanded {
+            transform: translateY(-4px);
+        }
+
+        /* Card Header */
+        .card-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+
+        .source .card-icon { background: linear-gradient(135deg, rgba(55, 118, 171, 0.2), rgba(255, 212, 59, 0.1)); }
+        .kafka .card-icon { background: linear-gradient(135deg, rgba(255, 107, 53, 0.2), rgba(245, 158, 11, 0.1)); }
+        .spark .card-icon { background: linear-gradient(135deg, rgba(226, 90, 28, 0.2), rgba(247, 181, 0, 0.1)); }
+        .elk .card-icon { background: linear-gradient(135deg, rgba(254, 209, 10, 0.2), rgba(0, 191, 179, 0.1)); }
+        .monitoring .card-icon { background: linear-gradient(135deg, rgba(230, 82, 44, 0.2), rgba(244, 104, 0, 0.1)); }
+
+        .card-title {
+            flex: 1;
+        }
+
+        .card-title h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .source .card-title h3 { color: var(--python-yellow); }
+        .kafka .card-title h3 { color: var(--kafka-orange); }
+        .spark .card-title h3 { color: var(--spark-orange); }
+        .elk .card-title h3 { color: var(--elastic-yellow); }
+        .monitoring .card-title h3 { color: var(--prometheus-orange); }
+
+        .card-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .card-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.375rem 0.875rem;
+            border-radius: 20px;
+            background: var(--bg-primary);
+        }
+
+        .source .card-badge { color: var(--python-blue); border: 1px solid var(--python-blue); }
+        .kafka .card-badge { color: var(--kafka-orange); border: 1px solid var(--kafka-orange); }
+        .spark .card-badge { color: var(--spark-orange); border: 1px solid var(--spark-orange); }
+        .elk .card-badge { color: var(--elastic-yellow); border: 1px solid var(--elastic-yellow); }
+        .monitoring .card-badge { color: var(--prometheus-orange); border: 1px solid var(--prometheus-orange); }
+
+        /* Card Stats */
+        .card-stats {
+            padding: 0 1.5rem 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-pill span {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        /* Card Details (Expandable) */
+        .card-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--bg-tertiary);
+            border-top: 1px solid transparent;
+        }
+
+        .component-card.expanded .card-details {
+            max-height: 500px;
+            border-top-color: var(--border-color);
+        }
+
+        .details-content {
+            padding: 1.5rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .detail-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            border-color: var(--accent-cyan);
+            transform: scale(1.02);
+        }
+
+        .detail-item-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-item-icon {
+            font-size: 1.25rem;
+        }
+
+        .detail-item-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .detail-item-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-item-status {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .status-text {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* View More Link */
+        .view-more-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.625rem 1.25rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .view-more-link:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--accent-cyan);
+            transform: translateX(5px);
+        }
+
+        /* Expand Indicator */
+        .expand-indicator {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover .expand-indicator {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .component-card.expanded .expand-indicator {
+            transform: rotate(180deg);
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        /* Split Row for Processing */
+        .split-connector {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .split-lines {
+            display: flex;
+            gap: 200px;
+        }
+
+        .split-line {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .split-line .flow-line {
+            height: 40px;
+        }
+
+        .split-line .flow-label {
+            position: relative;
+            left: auto;
+            top: auto;
+            transform: none;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer Legend */
+        .legend-bar {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+
+        .legend-dot.source { background: var(--python-blue); }
+        .legend-dot.kafka { background: var(--kafka-orange); }
+        .legend-dot.spark { background: var(--spark-orange); }
+        .legend-dot.elk { background: var(--elastic-yellow); }
+        .legend-dot.monitoring { background: var(--prometheus-orange); }
+
+        .legend-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .components-row.dual {
+                grid-template-columns: 1fr;
+            }
+            
+            .split-lines {
+                gap: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-stats {
+                display: none;
+            }
+
+            .main-container {
+                padding: 1.5rem 1rem;
+            }
+
+            .component-card {
+                width: 100%;
+            }
+
+            .split-lines {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .legend-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-effects">
+        <div class="bg-gradient bg-gradient-1"></div>
+        <div class="bg-gradient bg-gradient-2"></div>
+        <div class="bg-gradient bg-gradient-3"></div>
+        <div class="grid-pattern"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🏗️</div>
+                <div class="logo-text">
+                    <h1>Quay Crane Monitoring</h1>
+                    <p>Real-Time Data Engineering Platform</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-value">19</div>
+                    <div class="header-stat-label">Containers</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value">6</div>
+                    <div class="header-stat-label">Cranes</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value">8</div>
+                    <div class="header-stat-label">Sensor Types</div>
+                </div>
+            </div>
+            <div class="flow-controls">
+                <button class="flow-btn" id="flowToggle">
+                    <span class="flow-btn-icon">⚡</span>
+                    <span>Animate Flow</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="section-title fade-up">
+            <h2>System Architecture</h2>
+            <p>Click on any component to explore its internal structure</p>
+        </div>
+
+        <div class="architecture-wrapper">
+            
+            <!-- Layer 1: Data Source -->
+            <div class="layer-row fade-up" style="animation-delay: 0.1s;">
+                <div class="layer-label">
+                    <div class="layer-number source">1</div>
+                    <div>
+                        <div class="layer-title">Data Ingestion Layer</div>
+                        <div class="layer-desc">IoT sensor simulation & data generation</div>
+                    </div>
+                </div>
+                <div class="components-row single">
+                    <div class="component-card source" data-component="source" style="max-width: 550px; width: 100%;">
+                        <div class="card-header">
+                            <div class="card-icon">🚢</div>
+                            <div class="card-title">
+                                <h3>Data Source Layer</h3>
+                                <p>Python IoT Sensor Simulation</p>
+                            </div>
+                            <span class="card-badge">Host Machine</span>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-pill">🏗️ <span>6</span> Quay Cranes</div>
+                            <div class="stat-pill">🔌 <span>8</span> Sensor Types</div>
+                            <div class="stat-pill">⚡ <span>12</span> Producers</div>
+                            <div class="stat-pill">📦 <span>300</span> msg/batch</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="details-content">
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🐍</span>
+                                            <span class="detail-item-name">main.py</span>
+                                        </div>
+                                        <div class="detail-item-info">Application Entry Point</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Running</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📊</span>
+                                            <span class="detail-item-name">Simulator</span>
+                                        </div>
+                                        <div class="detail-item-info">QuayCraneSensorSimulator</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🏗️</span>
+                                            <span class="detail-item-name">QC_01 - QC_06</span>
+                                        </div>
+                                        <div class="detail-item-info">65K - 80K kg capacity</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Online</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="data-source-layer.html" class="view-more-link">
+                                    View Full Details →
+                                </a>
+                            </div>
+                        </div>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flow Connector 1 -->
+            <div class="flow-connector">
+                <div class="flow-line" id="flow1">
+                    <span class="flow-label">crane-sensors topic</span>
+                </div>
+            </div>
+
+            <!-- Layer 2: Kafka -->
+            <div class="layer-row fade-up" style="animation-delay: 0.2s;">
+                <div class="layer-label">
+                    <div class="layer-number kafka">2</div>
+                    <div>
+                        <div class="layer-title">Message Streaming Layer</div>
+                        <div class="layer-desc">Event streaming & message broker</div>
+                    </div>
+                </div>
+                <div class="components-row single">
+                    <div class="component-card kafka" data-component="kafka" style="max-width: 650px; width: 100%;">
+                        <div class="card-header">
+                            <div class="card-icon">📨</div>
+                            <div class="card-title">
+                                <h3>Apache Kafka Cluster</h3>
+                                <p>KRaft Mode Event Streaming Platform</p>
+                            </div>
+                            <span class="card-badge">7 Containers</span>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-pill">🎛️ <span>3</span> Controllers</div>
+                            <div class="stat-pill">📦 <span>3</span> Brokers</div>
+                            <div class="stat-pill">📋 <span>1</span> Schema Registry</div>
+                            <div class="stat-pill">🔗 cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="details-content">
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🎛️</span>
+                                            <span class="detail-item-name">controller-1</span>
+                                        </div>
+                                        <div class="detail-item-info">Node ID: 1</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Leader</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🎛️</span>
+                                            <span class="detail-item-name">controller-2</span>
+                                        </div>
+                                        <div class="detail-item-info">Node ID: 2</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Follower</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🎛️</span>
+                                            <span class="detail-item-name">controller-3</span>
+                                        </div>
+                                        <div class="detail-item-info">Node ID: 3</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Follower</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📦</span>
+                                            <span class="detail-item-name">broker-1</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 29092</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📦</span>
+                                            <span class="detail-item-name">broker-2</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 39092</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📦</span>
+                                            <span class="detail-item-name">broker-3</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 49092</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📋</span>
+                                            <span class="detail-item-name">schema-registry</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 18081</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="kafka-cluster.html" class="view-more-link">
+                                    View Full Details →
+                                </a>
+                            </div>
+                        </div>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split Flow Connector -->
+            <div class="split-connector">
+                <div class="split-lines">
+                    <div class="split-line">
+                        <div class="flow-line" id="flow2"></div>
+                        <span class="flow-label">Spark Streaming</span>
+                    </div>
+                    <div class="split-line">
+                        <div class="flow-line" id="flow3"></div>
+                        <span class="flow-label">Logstash Pipeline</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layer 3: Processing -->
+            <div class="layer-row fade-up" style="animation-delay: 0.3s;">
+                <div class="layer-label">
+                    <div class="layer-number processing">3</div>
+                    <div>
+                        <div class="layer-title">Processing & Storage Layer</div>
+                        <div class="layer-desc">Stream processing & search analytics</div>
+                    </div>
+                </div>
+                <div class="components-row dual">
+                    <!-- Spark Card -->
+                    <div class="component-card spark" data-component="spark">
+                        <div class="card-header">
+                            <div class="card-icon">⚡</div>
+                            <div class="card-title">
+                                <h3>Apache Spark Cluster</h3>
+                                <p>Standalone Streaming Engine</p>
+                            </div>
+                            <span class="card-badge">4 Containers</span>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-pill">👑 <span>1</span> Master</div>
+                            <div class="stat-pill">👷 <span>3</span> Workers</div>
+                            <div class="stat-pill">⚙️ <span>6</span> Streaming Queries</div>
+                            <div class="stat-pill">🔗 spark:3.5.0</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="details-content">
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">👑</span>
+                                            <span class="detail-item-name">spark-master</span>
+                                        </div>
+                                        <div class="detail-item-info">UI Port: 9190</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">👷</span>
+                                            <span class="detail-item-name">worker-1</span>
+                                        </div>
+                                        <div class="detail-item-info">2 cores, 2GB RAM</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">👷</span>
+                                            <span class="detail-item-name">worker-2</span>
+                                        </div>
+                                        <div class="detail-item-info">2 cores, 2GB RAM</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">👷</span>
+                                            <span class="detail-item-name">worker-3</span>
+                                        </div>
+                                        <div class="detail-item-info">2 cores, 2GB RAM</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="spark-cluster.html" class="view-more-link">
+                                    View Full Details →
+                                </a>
+                            </div>
+                        </div>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+
+                    <!-- ELK Card -->
+                    <div class="component-card elk" data-component="elk">
+                        <div class="card-header">
+                            <div class="card-icon">📊</div>
+                            <div class="card-title">
+                                <h3>ELK Stack</h3>
+                                <p>Search & Analytics Platform</p>
+                            </div>
+                            <span class="card-badge">3 Containers</span>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-pill">🔍 Elasticsearch</div>
+                            <div class="stat-pill">📥 Logstash</div>
+                            <div class="stat-pill">📈 Kibana</div>
+                            <div class="stat-pill">🔗 v8.11.0</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="details-content">
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🔍</span>
+                                            <span class="detail-item-name">elasticsearch</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 9200</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Green</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📥</span>
+                                            <span class="detail-item-name">logstash</span>
+                                        </div>
+                                        <div class="detail-item-info">8 Consumer Groups</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📈</span>
+                                            <span class="detail-item-name">kibana</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 5601</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="elk-stack.html" class="view-more-link">
+                                    View Full Details →
+                                </a>
+                            </div>
+                        </div>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flow Connector 2 -->
+            <div class="flow-connector">
+                <div class="flow-line" id="flow4">
+                    <span class="flow-label">Metrics Export</span>
+                </div>
+            </div>
+
+            <!-- Layer 4: Monitoring -->
+            <div class="layer-row fade-up" style="animation-delay: 0.4s;">
+                <div class="layer-label">
+                    <div class="layer-number monitoring">4</div>
+                    <div>
+                        <div class="layer-title">Observability Layer</div>
+                        <div class="layer-desc">System monitoring & visualization</div>
+                    </div>
+                </div>
+                <div class="components-row single">
+                    <div class="component-card monitoring" data-component="monitoring" style="max-width: 700px; width: 100%;">
+                        <div class="card-header">
+                            <div class="card-icon">📡</div>
+                            <div class="card-title">
+                                <h3>Monitoring Stack</h3>
+                                <p>Observability & Infrastructure Metrics</p>
+                            </div>
+                            <span class="card-badge">5 Containers</span>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-pill">🔥 Prometheus</div>
+                            <div class="stat-pill">📊 Grafana</div>
+                            <div class="stat-pill">🐳 cAdvisor</div>
+                            <div class="stat-pill">📨 Kafka Exporter</div>
+                            <div class="stat-pill">🦜 Redpanda Console</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="details-content">
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🔥</span>
+                                            <span class="detail-item-name">prometheus</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 9090</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📊</span>
+                                            <span class="detail-item-name">grafana</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 3000</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🐳</span>
+                                            <span class="detail-item-name">cadvisor</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 8080</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">📨</span>
+                                            <span class="detail-item-name">kafka-exporter</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 9308</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-item-header">
+                                            <span class="detail-item-icon">🦜</span>
+                                            <span class="detail-item-name">redpanda-console</span>
+                                        </div>
+                                        <div class="detail-item-info">Port: 8888</div>
+                                        <div class="detail-item-status">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="monitoring-stack.html" class="view-more-link">
+                                    View Full Details →
+                                </a>
+                            </div>
+                        </div>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Legend -->
+        <div class="legend-bar fade-up" style="animation-delay: 0.5s;">
+            <div class="legend-item">
+                <span class="legend-dot source"></span>
+                <span class="legend-text">Data Source</span>
+                <span class="legend-count">Host</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot kafka"></span>
+                <span class="legend-text">Kafka Cluster</span>
+                <span class="legend-count">7</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot spark"></span>
+                <span class="legend-text">Spark Cluster</span>
+                <span class="legend-count">4</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot elk"></span>
+                <span class="legend-text">ELK Stack</span>
+                <span class="legend-count">3</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot monitoring"></span>
+                <span class="legend-text">Monitoring</span>
+                <span class="legend-count">5</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Component card expansion
+        document.querySelectorAll('.component-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Don't toggle if clicking a link
+                if (e.target.tagName === 'A' || e.target.closest('a')) return;
+                
+                // Close other expanded cards
+                document.querySelectorAll('.component-card.expanded').forEach(other => {
+                    if (other !== card) other.classList.remove('expanded');
+                });
+                
+                card.classList.toggle('expanded');
+            });
+        });
+
+        // Flow animation toggle
+        const flowToggle = document.getElementById('flowToggle');
+        let flowActive = false;
+
+        flowToggle.addEventListener('click', () => {
+            flowActive = !flowActive;
+            flowToggle.classList.toggle('active', flowActive);
+            
+            document.querySelectorAll('.flow-line').forEach(line => {
+                line.classList.toggle('active', flowActive);
+            });
+        });
+
+        // Simulate random status changes
+        function simulateActivity() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                if (Math.random() > 0.97) {
+                    indicator.style.background = 'var(--accent-yellow)';
+                    indicator.style.boxShadow = '0 0 8px var(--accent-yellow)';
+                    setTimeout(() => {
+                        indicator.style.background = 'var(--accent-green)';
+                        indicator.style.boxShadow = '0 0 8px var(--accent-green)';
+                    }, 1500);
+                }
+            });
+        }
+
+        setInterval(simulateActivity, 1000);
+
+        // Keyboard escape to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.component-card.expanded').forEach(card => {
+                    card.classList.remove('expanded');
+                });
+            }
+        });
+
+        // Console branding
+        console.log('%c🏗️ Quay Crane Real-Time Monitoring', 'font-size: 18px; font-weight: bold; color: #06b6d4;');
+        console.log('%c19 Docker Containers | 6 Quay Cranes | Real-Time Analytics', 'font-size: 11px; color: #64748b;');
+    </script>
+</body>
+</html>
