@@ -258,6 +258,166 @@
             font-size: 1.1rem;
         }
 
+        /* Navigation Bar */
+        .nav-bar {
+            background: rgba(15, 15, 23, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            position: sticky;
+            top: 90px;
+            z-index: 99;
+            backdrop-filter: blur(20px);
+        }
+
+        .nav-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .nav-link-icon {
+            font-size: 1rem;
+        }
+
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dropdown-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .nav-dropdown-btn::after {
+            content: '▾';
+            font-size: 0.7rem;
+            margin-left: 0.25rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-btn::after {
+            transform: rotate(180deg);
+        }
+
+        .nav-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 220px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(5px);
+        }
+
+        .nav-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-dropdown-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-dropdown-item-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .nav-dropdown-item-icon.dataflow { background: rgba(6, 182, 212, 0.2); }
+        .nav-dropdown-item-icon.infra { background: rgba(168, 85, 247, 0.2); }
+        .nav-dropdown-item-icon.metrics { background: rgba(34, 197, 94, 0.2); }
+
+        .nav-dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 0;
+        }
+
+        .nav-dropdown-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.5rem 1rem 0.25rem;
+            font-weight: 600;
+        }
+
         /* Main Layout */
         .main-container {
             max-width: 1600px;
@@ -781,6 +941,27 @@
                 display: none;
             }
 
+            .nav-bar {
+                top: 140px;
+                padding: 0.5rem 1rem;
+                overflow-x: auto;
+            }
+
+            .nav-container {
+                justify-content: flex-start;
+                gap: 0.25rem;
+            }
+
+            .nav-link, .nav-dropdown-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+
+            .nav-dropdown-menu {
+                min-width: 180px;
+            }
+
             .main-container {
                 padding: 1.5rem 1rem;
             }
@@ -854,6 +1035,104 @@
             </div>
         </div>
     </header>
+
+    <!-- Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <!-- Architecture (Current) -->
+            <a href="architecture.html" class="nav-link active">
+                <span class="nav-link-icon">🏛️</span>
+                <span>Architecture</span>
+            </a>
+
+            <!-- Data Flow Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-btn">
+                    <span class="nav-link-icon">🔄</span>
+                    <span>Data Flow</span>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Flow Diagrams</div>
+                    <a href="data-flow-diagram.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon dataflow">📊</div>
+                        <span>Data Flow Overview</span>
+                    </a>
+                    <a href="kafka-message-flow.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon dataflow">📨</div>
+                        <span>Kafka Message Flow</span>
+                    </a>
+                    <a href="spark-pipeline.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon dataflow">⚡</div>
+                        <span>Spark Pipeline</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Infrastructure Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-btn">
+                    <span class="nav-link-icon">🔧</span>
+                    <span>Infrastructure</span>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Network & Services</div>
+                    <a href="network-topology.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon infra">🌐</div>
+                        <span>Network Topology</span>
+                    </a>
+                    <a href="component-interactions.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon infra">🔗</div>
+                        <span>Component Interactions</span>
+                    </a>
+                    <a href="service-dependency.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon infra">📦</div>
+                        <span>Service Dependencies</span>
+                    </a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Monitoring</div>
+                    <a href="monitoring-plane.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon metrics">📈</div>
+                        <span>Monitoring Plane</span>
+                    </a>
+                    <a href="data-volumetry.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon metrics">💾</div>
+                        <span>Data Volumetry</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Component Details Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-btn">
+                    <span class="nav-link-icon">🧩</span>
+                    <span>Components</span>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Layer Details</div>
+                    <a href="data-source-layer.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon" style="background: rgba(59, 130, 246, 0.2);">🐍</div>
+                        <span>Data Source Layer</span>
+                    </a>
+                    <a href="kafka-cluster.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon" style="background: rgba(255, 107, 53, 0.2);">📡</div>
+                        <span>Kafka Cluster</span>
+                    </a>
+                    <a href="spark-cluster.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon" style="background: rgba(255, 140, 0, 0.2);">⚡</div>
+                        <span>Spark Cluster</span>
+                    </a>
+                    <a href="elk-stack.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon" style="background: rgba(254, 215, 102, 0.2);">🔍</div>
+                        <span>ELK Stack</span>
+                    </a>
+                    <a href="monitoring-stack.html" class="nav-dropdown-item">
+                        <div class="nav-dropdown-item-icon" style="background: rgba(230, 100, 100, 0.2);">📊</div>
+                        <span>Monitoring Stack</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
 
     <main class="main-container">
         <div class="section-title fade-up">
