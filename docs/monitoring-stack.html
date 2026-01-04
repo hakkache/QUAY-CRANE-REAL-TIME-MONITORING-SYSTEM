@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Stack - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --prometheus-orange: #e6522c;
+            --grafana-orange: #f46800;
+            --cadvisor-blue: #2196f3;
+            --kafka-orange: #ff6b35;
+            --redpanda-red: #e53935;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(230, 82, 44, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(244, 104, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(229, 57, 53, 0.06) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(230, 82, 44, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(230, 82, 44, 0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--prometheus-orange), var(--grafana-orange));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--prometheus-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .container-count {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(230, 82, 44, 0.15);
+            border: 1px solid var(--prometheus-orange);
+            border-radius: 20px;
+        }
+
+        .count-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--prometheus-orange);
+        }
+
+        .count-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--prometheus-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Service Card Base */
+        .service-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .service-card.prometheus::before { background: var(--prometheus-orange); }
+        .service-card.grafana::before { background: var(--grafana-orange); }
+        .service-card.cadvisor::before { background: var(--cadvisor-blue); }
+        .service-card.kafka-exporter::before { background: var(--kafka-orange); }
+        .service-card.redpanda::before { background: var(--redpanda-red); }
+
+        .service-card.prometheus:hover { border-color: var(--prometheus-orange); box-shadow: 0 0 40px rgba(230, 82, 44, 0.2); }
+        .service-card.grafana:hover { border-color: var(--grafana-orange); box-shadow: 0 0 40px rgba(244, 104, 0, 0.2); }
+        .service-card.cadvisor:hover { border-color: var(--cadvisor-blue); box-shadow: 0 0 40px rgba(33, 150, 243, 0.2); }
+        .service-card.kafka-exporter:hover { border-color: var(--kafka-orange); box-shadow: 0 0 40px rgba(255, 107, 53, 0.2); }
+        .service-card.redpanda:hover { border-color: var(--redpanda-red); box-shadow: 0 0 40px rgba(229, 57, 53, 0.2); }
+
+        /* Service Header */
+        .service-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .service-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .service-icon {
+            font-size: 2rem;
+        }
+
+        .service-name h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .service-name h3.prometheus { color: var(--prometheus-orange); }
+        .service-name h3.grafana { color: var(--grafana-orange); }
+        .service-name h3.cadvisor { color: var(--cadvisor-blue); }
+        .service-name h3.kafka-exporter { color: var(--kafka-orange); }
+        .service-name h3.redpanda { color: var(--redpanda-red); }
+
+        .service-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+
+        .service-container {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .service-image {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Service Info Grid */
+        .service-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+        }
+
+        /* Scrape Targets */
+        .scrape-targets {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .scrape-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .targets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+
+        .target-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .target-card:hover {
+            border-color: var(--prometheus-orange);
+            transform: scale(1.02);
+        }
+
+        .target-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .target-port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.5rem;
+        }
+
+        .target-metrics {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+
+        .target-metric {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            padding: 0.125rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .target-metric::before {
+            content: '•';
+            color: var(--prometheus-orange);
+        }
+
+        /* Dashboards Grid */
+        .dashboards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .dashboard-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            border-color: var(--grafana-orange);
+            transform: scale(1.02);
+        }
+
+        .dashboard-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--grafana-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-panels {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+
+        .panel-item {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 0.125rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .panel-item::before {
+            content: '•';
+            color: var(--grafana-orange);
+        }
+
+        /* Two Column Layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Volume and Config Info */
+        .config-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .config-label {
+            color: var(--text-muted);
+        }
+
+        .config-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        /* Mounted Volumes */
+        .volumes-list {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .volumes-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .volume-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .volume-item::before {
+            content: '📁';
+            font-size: 0.6rem;
+        }
+
+        /* Metrics List */
+        .metrics-list {
+            margin-top: 0.75rem;
+        }
+
+        .metrics-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--accent-cyan);
+            padding: 0.25rem 0;
+        }
+
+        /* Features Grid */
+        .features-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .features-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .connection-info {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .connection-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .connection-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 0.125rem 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--redpanda-red);
+        }
+
+        .feature-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--redpanda-red);
+            margin-bottom: 0.375rem;
+        }
+
+        .feature-items {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .feature-item {
+            padding: 0.125rem 0;
+        }
+
+        /* Data Flow Arrow */
+        .data-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .flow-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .arrow-line {
+            width: 3px;
+            height: 40px;
+            background: linear-gradient(180deg, var(--prometheus-orange), var(--grafana-orange));
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .arrow-line::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--grafana-orange);
+        }
+
+        .arrow-label {
+            margin-top: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.orange { color: var(--prometheus-orange); }
+        .stat-value.grafana { color: var(--grafana-orange); }
+        .stat-value.blue { color: var(--cadvisor-blue); }
+        .stat-value.red { color: var(--redpanda-red); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .targets-grid, .dashboards-grid, .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .container-count {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .targets-grid, .dashboards-grid, .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .service-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .service-meta {
+                align-items: flex-start;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .status-text {
+            font-size: 0.7rem;
+            color: var(--accent-green);
+        }
+
+        /* Scraping Animation */
+        .scraping-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scrape-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--prometheus-orange);
+            border-radius: 50%;
+            animation: scrapePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scrapePulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .scrape-text {
+            font-size: 0.7rem;
+            color: var(--prometheus-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🔍</div>
+                <div class="logo-text">
+                    <h1>Monitoring & Observability</h1>
+                    <p>Complete Stack Overview</p>
+                </div>
+            </div>
+            <div class="container-count">
+                <span class="count-number">5</span>
+                <span class="count-label">Containers</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🔍 Monitoring & Observability Stack</h2>
+            <p>Complete metrics collection, visualization, and Kafka management infrastructure</p>
+        </section>
+
+        <!-- Prometheus -->
+        <div class="service-card prometheus fade-in">
+            <div class="scraping-indicator">
+                <div class="scrape-dot"></div>
+                <span class="scrape-text">Scraping...</span>
+            </div>
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">🔥</span>
+                    <div class="service-name">
+                        <h3 class="prometheus">PROMETHEUS</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: prometheus</span>
+                    <span class="service-image">prom/prometheus:v2.47.0</span>
+                </div>
+            </div>
+
+            <div class="service-info">
+                <div class="info-item">
+                    <span class="info-label">Port:</span>
+                    <span class="info-value">9090</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Scrape Interval:</span>
+                    <span class="info-value">15s</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Retention:</span>
+                    <span class="info-value">7 days</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Config:</span>
+                    <span class="info-value">/etc/prometheus/prometheus.yml</span>
+                </div>
+            </div>
+
+            <div class="scrape-targets">
+                <div class="scrape-header">📡 SCRAPE TARGETS</div>
+                <div class="targets-grid">
+                    <div class="target-card">
+                        <div class="target-name">kafka-exporter</div>
+                        <div class="target-port">:9308</div>
+                        <div class="target-metrics">
+                            <div class="target-metric">Broker metrics</div>
+                            <div class="target-metric">Topic stats</div>
+                            <div class="target-metric">Consumer lag</div>
+                            <div class="target-metric">Partition info</div>
+                        </div>
+                    </div>
+                    <div class="target-card">
+                        <div class="target-name">cAdvisor</div>
+                        <div class="target-port">:8080</div>
+                        <div class="target-metrics">
+                            <div class="target-metric">CPU usage</div>
+                            <div class="target-metric">Memory usage</div>
+                            <div class="target-metric">Disk I/O</div>
+                            <div class="target-metric">Network I/O</div>
+                        </div>
+                    </div>
+                    <div class="target-card">
+                        <div class="target-name">elasticsearch</div>
+                        <div class="target-port">:9200/_stats</div>
+                        <div class="target-metrics">
+                            <div class="target-metric">Cluster health</div>
+                            <div class="target-metric">Index stats</div>
+                            <div class="target-metric">JVM heap</div>
+                            <div class="target-metric">Thread pools</div>
+                        </div>
+                    </div>
+                    <div class="target-card">
+                        <div class="target-name">prometheus</div>
+                        <div class="target-port">:9090 (self)</div>
+                        <div class="target-metrics">
+                            <div class="target-metric">Self metrics</div>
+                            <div class="target-metric">Query perf</div>
+                            <div class="target-metric">Target health</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-info">
+                <div class="config-item">
+                    <span class="config-label">📁 Volume:</span>
+                    <span class="config-value">prometheus_data:/prometheus</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flow Arrow -->
+        <div class="data-flow">
+            <div class="flow-arrow">
+                <div class="arrow-line"></div>
+                <span class="arrow-label">Data Source</span>
+            </div>
+        </div>
+
+        <!-- Grafana -->
+        <div class="service-card grafana fade-in">
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">📊</span>
+                    <div class="service-name">
+                        <h3 class="grafana">GRAFANA</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: grafana</span>
+                    <span class="service-image">grafana/grafana:10.1.0</span>
+                </div>
+            </div>
+
+            <div class="service-info">
+                <div class="info-item">
+                    <span class="info-label">Port:</span>
+                    <span class="info-value">3001 → 3000</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Login:</span>
+                    <span class="info-value">admin / admin123</span>
+                </div>
+            </div>
+
+            <div class="scrape-targets">
+                <div class="scrape-header">📈 DASHBOARDS</div>
+                <div class="dashboards-grid">
+                    <div class="dashboard-card">
+                        <div class="dashboard-name">Kafka Cluster</div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item">Broker status</div>
+                            <div class="panel-item">Messages/sec</div>
+                            <div class="panel-item">Consumer groups</div>
+                            <div class="panel-item">Topic partitions</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-name">Container Resources</div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item">CPU per container</div>
+                            <div class="panel-item">Memory usage</div>
+                            <div class="panel-item">Network traffic</div>
+                            <div class="panel-item">Disk I/O</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-name">Elasticsearch</div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item">Cluster health</div>
+                            <div class="panel-item">Index sizes</div>
+                            <div class="panel-item">Query rates</div>
+                            <div class="panel-item">JVM metrics</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-info">
+                <div class="config-item">
+                    <span class="config-label">🔌 Plugins:</span>
+                    <span class="config-value">grafana-clock-panel, grafana-piechart-panel</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">📁 Volume:</span>
+                    <span class="config-value">grafana_data:/var/lib/grafana</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Column: cAdvisor & Kafka Exporter -->
+        <div class="two-column">
+            <!-- cAdvisor -->
+            <div class="service-card cadvisor fade-in">
+                <div class="service-header">
+                    <div class="service-title">
+                        <span class="service-icon">🐳</span>
+                        <div class="service-name">
+                            <h3 class="cadvisor">CADVISOR</h3>
+                        </div>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span class="status-text">Privileged</span>
+                    </div>
+                </div>
+
+                <div class="service-meta" style="margin-bottom: 1rem;">
+                    <span class="service-container">Container: cadvisor</span>
+                    <span class="service-image">gcr.io/cadvisor/cadvisor:v0.47.2</span>
+                </div>
+
+                <div class="service-info">
+                    <div class="info-item">
+                        <span class="info-label">Port:</span>
+                        <span class="info-value">8085 → 8080</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Privileged:</span>
+                        <span class="info-value">true</span>
+                    </div>
+                </div>
+
+                <div class="volumes-list">
+                    <div class="volumes-header">Mounted Volumes (Read-Only):</div>
+                    <div class="volume-item">/:/rootfs</div>
+                    <div class="volume-item">/var/run:/var/run</div>
+                    <div class="volume-item">/sys:/sys</div>
+                    <div class="volume-item">/var/lib/docker:/var/lib/docker</div>
+                    <div class="volume-item">/dev/disk:/dev/disk</div>
+                </div>
+
+                <div class="metrics-list">
+                    <div class="metrics-header">Metrics:</div>
+                    <div class="metric-item">container_cpu_usage_seconds_total</div>
+                    <div class="metric-item">container_memory_usage_bytes</div>
+                    <div class="metric-item">container_network_receive_bytes_total</div>
+                    <div class="metric-item">container_fs_usage_bytes</div>
+                </div>
+            </div>
+
+            <!-- Kafka Exporter -->
+            <div class="service-card kafka-exporter fade-in">
+                <div class="service-header">
+                    <div class="service-title">
+                        <span class="service-icon">📤</span>
+                        <div class="service-name">
+                            <h3 class="kafka-exporter">KAFKA EXPORTER</h3>
+                        </div>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span class="status-text">Running</span>
+                    </div>
+                </div>
+
+                <div class="service-meta" style="margin-bottom: 1rem;">
+                    <span class="service-container">Container: kafka-exporter</span>
+                    <span class="service-image">danielqsj/kafka-exporter:latest</span>
+                </div>
+
+                <div class="service-info">
+                    <div class="info-item">
+                        <span class="info-label">Port:</span>
+                        <span class="info-value">9308</span>
+                    </div>
+                </div>
+
+                <div class="volumes-list">
+                    <div class="volumes-header">Kafka Servers:</div>
+                    <div class="volume-item" style="color: var(--accent-cyan);">kafka-broker-1:19092</div>
+                    <div class="volume-item" style="color: var(--accent-cyan);">kafka-broker-2:19092</div>
+                    <div class="volume-item" style="color: var(--accent-cyan);">kafka-broker-3:19092</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-muted);">
+                        Topic Filter: <span style="color: var(--accent-cyan);">crane_.*</span><br>
+                        Group Filter: <span style="color: var(--accent-cyan);">.*</span>
+                    </div>
+                </div>
+
+                <div class="metrics-list">
+                    <div class="metrics-header">Metrics Exposed:</div>
+                    <div class="metric-item">kafka_topic_partition_current_offset</div>
+                    <div class="metric-item">kafka_consumergroup_current_offset</div>
+                    <div class="metric-item">kafka_topic_partitions</div>
+                    <div class="metric-item">kafka_broker_info</div>
+                    <div class="metric-item">kafka_consumergroup_lag</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Redpanda Console -->
+        <div class="service-card redpanda fade-in">
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">🖥️</span>
+                    <div class="service-name">
+                        <h3 class="redpanda">REDPANDA CONSOLE (Kafka UI)</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: console</span>
+                    <span class="service-image">redpandadata/console:v2.5.2</span>
+                </div>
+            </div>
+
+            <div class="service-info">
+                <div class="info-item">
+                    <span class="info-label">Port:</span>
+                    <span class="info-value">8080</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Config:</span>
+                    <span class="info-value">Dynamic YAML</span>
+                </div>
+            </div>
+
+            <div class="features-section">
+                <div class="features-header">🔧 FEATURES</div>
+                
+                <div class="connection-info">
+                    <div class="connection-title">Kafka Connection:</div>
+                    <div class="connection-item">• Brokers: kafka-broker-1:19092, kafka-broker-2:19092, kafka-broker-3:19092</div>
+                    <div style="margin-top: 0.5rem;">
+                        <div class="connection-title">Schema Registry Integration:</div>
+                        <div class="connection-item">• URL: http://schema-registry:8081</div>
+                        <div class="connection-item">• Avro/JSON/Protobuf schema viewing</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.8rem; color: var(--text-primary); margin-bottom: 0.75rem; font-weight: 600;">UI Capabilities:</div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-name">Topic Browser</div>
+                        <div class="feature-items">
+                            <div class="feature-item">• List topics</div>
+                            <div class="feature-item">• Create/delete</div>
+                            <div class="feature-item">• Config editing</div>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-name">Consumer Groups</div>
+                        <div class="feature-items">
+                            <div class="feature-item">• Lag monitoring</div>
+                            <div class="feature-item">• Offset reset</div>
+                            <div class="feature-item">• Member listing</div>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-name">Message Viewer</div>
+                        <div class="feature-items">
+                            <div class="feature-item">• Live tail</div>
+                            <div class="feature-item">• Search/filter</div>
+                            <div class="feature-item">• JSON formatting</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value orange">5</div>
+                <div class="stat-label">Containers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value grafana">4</div>
+                <div class="stat-label">Scrape Targets</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value blue">3</div>
+                <div class="stat-label">Dashboards</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value red">15s</div>
+                <div class="stat-label">Scrape Interval</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Simulate scraping animation
+        function simulateScrape() {
+            const targets = document.querySelectorAll('.target-card');
+            targets.forEach((target, index) => {
+                setTimeout(() => {
+                    target.style.borderColor = 'var(--prometheus-orange)';
+                    target.style.boxShadow = '0 0 15px rgba(230, 82, 44, 0.3)';
+                    setTimeout(() => {
+                        target.style.borderColor = 'var(--border-color)';
+                        target.style.boxShadow = '';
+                    }, 300);
+                }, index * 200);
+            });
+        }
+
+        // Scrape simulation every 15 seconds
+        setInterval(simulateScrape, 15000);
+        setTimeout(simulateScrape, 2000);
+
+        // Dashboard card hover effects
+        document.querySelectorAll('.dashboard-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Feature card interactions
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.background = 'var(--bg-tertiary)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'var(--bg-primary)';
+            });
+        });
+
+        // Metric items hover effect
+        document.querySelectorAll('.metric-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.color = 'var(--text-primary)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.color = 'var(--accent-cyan)';
+            });
+        });
+
+        // Copy metric name on click
+        document.querySelectorAll('.metric-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                navigator.clipboard.writeText(item.textContent);
+                item.style.background = 'rgba(16, 185, 129, 0.2)';
+                setTimeout(() => {
+                    item.style.background = '';
+                }, 500);
+            });
+        });
+
+        // Service card status animation
+        function updateStatus() {
+            document.querySelectorAll('.status-dot').forEach(dot => {
+                dot.style.opacity = Math.random() > 0.1 ? '1' : '0.5';
+            });
+        }
+        setInterval(updateStatus, 3000);
+    </script>
+</body>
+</html>

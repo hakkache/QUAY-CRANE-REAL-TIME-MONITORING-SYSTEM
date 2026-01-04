@@ -1,0 +1,8 @@
+{
+  "type": "index-pattern",
+  "id": "crane-health",
+  "attributes": {
+    "title": "crane-health-*",
+    "timeFieldName": "@timestamp"
+  }
+}

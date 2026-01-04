@@ -1,0 +1,20 @@
+{
+  "type": "visualization",
+  "id": "viz-avg-motor-temp",
+  "attributes": {
+    "title": "🌡️ Average Motor Temperature",
+    "visState": "{\"title\":\"Average Motor Temperature\",\"type\":\"metric\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"avg\",\"params\":{\"field\":\"motor_temperature_c\",\"customLabel\":\"Motor Temp (°C)\"},\"schema\":\"metric\"}],\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":true,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"Background\",\"colorsRange\":[{\"from\":0,\"to\":60},{\"from\":60,\"to\":80},{\"from\":80,\"to\":120}],\"labels\":{\"show\":true},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":true,\"labelColor\":false,\"subText\":\"\",\"fontSize\":50}}}}",
+    "uiStateJSON": "{}",
+    "description": "Average motor temperature",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
+    }
+  },
+  "references": [
+    {
+      "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
+      "type": "index-pattern",
+      "id": "crane-sensors"
+    }
+  ]
+}

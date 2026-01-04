@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Topology - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --kafka-orange: #ff6b35;
+            --spark-orange: #e25a1c;
+            --elastic-teal: #00bfb3;
+            --kibana-pink: #f04e98;
+            --docker-blue: #2496ed;
+            --prometheus-orange: #e6522c;
+            --grafana-orange: #f46800;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(36, 150, 237, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 107, 53, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0, 191, 179, 0.05) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(36, 150, 237, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(36, 150, 237, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--docker-blue), var(--accent-cyan));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--docker-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .network-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(36, 150, 237, 0.15);
+            border: 1px solid var(--docker-blue);
+            border-radius: 20px;
+        }
+
+        .network-icon {
+            font-size: 1rem;
+        }
+
+        .network-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--docker-blue);
+        }
+
+        .network-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--docker-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Network Container */
+        .network-container {
+            background: var(--bg-card);
+            border: 2px solid var(--docker-blue);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            box-shadow: 0 0 40px rgba(36, 150, 237, 0.15);
+        }
+
+        .network-container::before {
+            content: '🌐 DOCKER NETWORK: hakkachenetwork (bridge)';
+            position: absolute;
+            top: -14px;
+            left: 30px;
+            background: var(--bg-primary);
+            padding: 0 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--docker-blue);
+        }
+
+        /* Cluster Sections */
+        .clusters-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cluster-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .cluster-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .cluster-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .cluster-section.kafka::before { background: var(--kafka-orange); }
+        .cluster-section.spark::before { background: var(--spark-orange); }
+        .cluster-section.elk::before { background: var(--elastic-teal); }
+        .cluster-section.monitoring::before { background: var(--prometheus-orange); }
+
+        .cluster-section.kafka:hover { border-color: var(--kafka-orange); }
+        .cluster-section.spark:hover { border-color: var(--spark-orange); }
+        .cluster-section.elk:hover { border-color: var(--elastic-teal); }
+        .cluster-section.monitoring:hover { border-color: var(--prometheus-orange); }
+
+        .cluster-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .cluster-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .cluster-title.kafka { color: var(--kafka-orange); }
+        .cluster-title.spark { color: var(--spark-orange); }
+        .cluster-title.elk { color: var(--elastic-teal); }
+        .cluster-title.monitoring { color: var(--prometheus-orange); }
+
+        .cluster-count {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Container Cards Grid */
+        .containers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .container-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .container-card:hover {
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .container-card.kafka:hover { border-color: var(--kafka-orange); box-shadow: 0 0 15px rgba(255, 107, 53, 0.3); }
+        .container-card.spark:hover { border-color: var(--spark-orange); box-shadow: 0 0 15px rgba(226, 90, 28, 0.3); }
+        .container-card.elk:hover { border-color: var(--elastic-teal); box-shadow: 0 0 15px rgba(0, 191, 179, 0.3); }
+        .container-card.monitoring:hover { border-color: var(--prometheus-orange); box-shadow: 0 0 15px rgba(230, 82, 44, 0.3); }
+
+        .container-icon {
+            font-size: 1.25rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .container-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+
+        .container-ports {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--accent-cyan);
+            line-height: 1.4;
+        }
+
+        .container-status {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Port Mappings Section */
+        .port-mappings {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .port-mappings-header {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .port-mappings-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .mappings-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .mapping-group {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .mapping-group-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.375rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mapping-group.kafka .mapping-group-header { color: var(--kafka-orange); }
+        .mapping-group.spark .mapping-group-header { color: var(--spark-orange); }
+        .mapping-group.elk .mapping-group-header { color: var(--elastic-teal); }
+        .mapping-group.monitoring .mapping-group-header { color: var(--prometheus-orange); }
+
+        .mapping-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .mapping-item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .mapping-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .host-port {
+            color: var(--accent-yellow);
+            font-weight: 600;
+            min-width: 45px;
+        }
+
+        .port-arrow {
+            color: var(--text-muted);
+        }
+
+        .container-port {
+            color: var(--accent-cyan);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.blue { color: var(--docker-blue); }
+        .stat-value.orange { color: var(--kafka-orange); }
+        .stat-value.teal { color: var(--elastic-teal); }
+        .stat-value.yellow { color: var(--accent-yellow); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .clusters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mappings-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .network-badge {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .containers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .mappings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-footer {
+                gap: 1rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Connection lines animation */
+        .cluster-section::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            width: 2px;
+            height: 10px;
+            background: var(--border-color);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            max-width: 250px;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+        }
+
+        .tooltip-content {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🌐</div>
+                <div class="logo-text">
+                    <h1>Network Topology</h1>
+                    <p>Docker Container Infrastructure</p>
+                </div>
+            </div>
+            <div class="network-badge">
+                <span class="network-icon">🐳</span>
+                <span class="network-name">hakkachenetwork</span>
+                <span class="network-type">bridge</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🌐 Complete Network Topology</h2>
+            <p>All 19 containers running on Docker bridge network with port mappings</p>
+        </section>
+
+        <div class="network-container fade-in">
+            <div class="clusters-grid">
+                <!-- Kafka Cluster -->
+                <div class="cluster-section kafka">
+                    <div class="cluster-header">
+                        <span class="cluster-title kafka">📦 KAFKA CLUSTER</span>
+                        <span class="cluster-count">7 containers</span>
+                    </div>
+                    <div class="containers-grid">
+                        <div class="container-card kafka" data-tooltip="Kafka Controller 1 - Raft consensus leader election">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🎛️</div>
+                            <div class="container-name">controller-1</div>
+                            <div class="container-ports">:9093</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Kafka Controller 2 - Raft follower">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🎛️</div>
+                            <div class="container-name">controller-2</div>
+                            <div class="container-ports">:9093</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Kafka Controller 3 - Raft follower">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🎛️</div>
+                            <div class="container-name">controller-3</div>
+                            <div class="container-ports">:9093</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Kafka Broker 1 - Message storage and replication">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📬</div>
+                            <div class="container-name">broker-1</div>
+                            <div class="container-ports">:19092/29092</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Kafka Broker 2 - Message storage and replication">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📬</div>
+                            <div class="container-name">broker-2</div>
+                            <div class="container-ports">:19092/39092</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Kafka Broker 3 - Message storage and replication">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📬</div>
+                            <div class="container-name">broker-3</div>
+                            <div class="container-ports">:19092/49092</div>
+                        </div>
+                        <div class="container-card kafka" data-tooltip="Schema Registry - Avro/JSON schema management">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📋</div>
+                            <div class="container-name">schema-registry</div>
+                            <div class="container-ports">:8081/18081</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spark Cluster -->
+                <div class="cluster-section spark">
+                    <div class="cluster-header">
+                        <span class="cluster-title spark">⚡ SPARK CLUSTER</span>
+                        <span class="cluster-count">4 containers</span>
+                    </div>
+                    <div class="containers-grid">
+                        <div class="container-card spark" data-tooltip="Spark Master - Cluster coordinator and job scheduler">
+                            <div class="container-status"></div>
+                            <div class="container-icon">👑</div>
+                            <div class="container-name">spark-master</div>
+                            <div class="container-ports">:7077/:9190/:4040</div>
+                        </div>
+                        <div class="container-card spark" data-tooltip="Spark Worker 1 - 2 cores, 2GB memory">
+                            <div class="container-status"></div>
+                            <div class="container-icon">⚙️</div>
+                            <div class="container-name">spark-worker</div>
+                            <div class="container-ports">Worker 1</div>
+                        </div>
+                        <div class="container-card spark" data-tooltip="Spark Worker 2 - 2 cores, 2GB memory">
+                            <div class="container-status"></div>
+                            <div class="container-icon">⚙️</div>
+                            <div class="container-name">spark_worker-2</div>
+                            <div class="container-ports">Worker 2</div>
+                        </div>
+                        <div class="container-card spark" data-tooltip="Spark Worker 3 - 2 cores, 2GB memory">
+                            <div class="container-status"></div>
+                            <div class="container-icon">⚙️</div>
+                            <div class="container-name">spark_worker-3</div>
+                            <div class="container-ports">Worker 3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ELK Stack -->
+                <div class="cluster-section elk">
+                    <div class="cluster-header">
+                        <span class="cluster-title elk">🔍 ELK STACK</span>
+                        <span class="cluster-count">3 containers</span>
+                    </div>
+                    <div class="containers-grid">
+                        <div class="container-card elk" data-tooltip="Elasticsearch - Distributed search and analytics engine">
+                            <div class="container-status"></div>
+                            <div class="container-icon">💾</div>
+                            <div class="container-name">elasticsearch</div>
+                            <div class="container-ports">:9200/:9300</div>
+                        </div>
+                        <div class="container-card elk" data-tooltip="Logstash - Data processing pipeline">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📊</div>
+                            <div class="container-name">logstash</div>
+                            <div class="container-ports">:5044/:9600</div>
+                        </div>
+                        <div class="container-card elk" data-tooltip="Kibana - Data visualization and exploration">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📈</div>
+                            <div class="container-name">kibana</div>
+                            <div class="container-ports">:5601</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monitoring Stack -->
+                <div class="cluster-section monitoring">
+                    <div class="cluster-header">
+                        <span class="cluster-title monitoring">📡 MONITORING STACK</span>
+                        <span class="cluster-count">5 containers</span>
+                    </div>
+                    <div class="containers-grid">
+                        <div class="container-card monitoring" data-tooltip="Prometheus - Metrics collection and alerting">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🔥</div>
+                            <div class="container-name">prometheus</div>
+                            <div class="container-ports">:9090</div>
+                        </div>
+                        <div class="container-card monitoring" data-tooltip="Grafana - Metrics visualization dashboards">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📊</div>
+                            <div class="container-name">grafana</div>
+                            <div class="container-ports">:3001 → :3000</div>
+                        </div>
+                        <div class="container-card monitoring" data-tooltip="cAdvisor - Container resource monitoring">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🐳</div>
+                            <div class="container-name">cadvisor</div>
+                            <div class="container-ports">:8085 → :8080</div>
+                        </div>
+                        <div class="container-card monitoring" data-tooltip="Kafka Exporter - Kafka metrics for Prometheus">
+                            <div class="container-status"></div>
+                            <div class="container-icon">📤</div>
+                            <div class="container-name">kafka-exporter</div>
+                            <div class="container-ports">:9308</div>
+                        </div>
+                        <div class="container-card monitoring" data-tooltip="Redpanda Console - Kafka UI for debugging">
+                            <div class="container-status"></div>
+                            <div class="container-icon">🖥️</div>
+                            <div class="container-name">console</div>
+                            <div class="container-ports">:8080</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Port Mappings -->
+            <div class="port-mappings">
+                <div class="port-mappings-header">
+                    <div class="port-mappings-title">═══ HOST PORT MAPPINGS ═══</div>
+                </div>
+                <div class="mappings-grid">
+                    <!-- Kafka -->
+                    <div class="mapping-group kafka">
+                        <div class="mapping-group-header">KAFKA CLUSTER</div>
+                        <div class="mapping-list">
+                            <div class="mapping-item">
+                                <span class="host-port">29092</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">broker-1:9092</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">39092</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">broker-2:9092</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">49092</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">broker-3:9092</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">18081</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">schema-registry:8081</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spark -->
+                    <div class="mapping-group spark">
+                        <div class="mapping-group-header">SPARK CLUSTER</div>
+                        <div class="mapping-list">
+                            <div class="mapping-item">
+                                <span class="host-port">9190</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">spark-master:8080</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">7077</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">spark-master:7077</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">4040</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">spark-master:4040</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">8081</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">spark-master:8081</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ELK -->
+                    <div class="mapping-group elk">
+                        <div class="mapping-group-header">ELK STACK</div>
+                        <div class="mapping-list">
+                            <div class="mapping-item">
+                                <span class="host-port">5601</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">kibana:5601</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">9200</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">elasticsearch:9200</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">5044</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">logstash:5044</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">9600</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">logstash:9600</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monitoring -->
+                    <div class="mapping-group monitoring">
+                        <div class="mapping-group-header">MONITORING STACK</div>
+                        <div class="mapping-list">
+                            <div class="mapping-item">
+                                <span class="host-port">9090</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">prometheus:9090</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">3001</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">grafana:3000</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">8085</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">cadvisor:8080</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">9308</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">kafka-exporter:9308</span>
+                            </div>
+                            <div class="mapping-item">
+                                <span class="host-port">8080</span>
+                                <span class="port-arrow">→</span>
+                                <span class="container-port">console:8080</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value blue">19</div>
+                <div class="stat-label">Total Containers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value orange">4</div>
+                <div class="stat-label">Service Clusters</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value teal">17</div>
+                <div class="stat-label">Port Mappings</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value yellow">1</div>
+                <div class="stat-label">Bridge Network</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-title"></div>
+        <div class="tooltip-content"></div>
+    </div>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Tooltip functionality
+        const tooltip = document.getElementById('tooltip');
+        const containerCards = document.querySelectorAll('.container-card');
+
+        containerCards.forEach(card => {
+            card.addEventListener('mouseenter', (e) => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                const containerName = card.querySelector('.container-name').textContent;
+                
+                tooltip.querySelector('.tooltip-title').textContent = containerName;
+                tooltip.querySelector('.tooltip-content').textContent = tooltipText;
+                tooltip.classList.add('visible');
+            });
+
+            card.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+            });
+
+            card.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('visible');
+            });
+        });
+
+        // Staggered status pulse animation
+        document.querySelectorAll('.container-status').forEach((status, index) => {
+            status.style.animationDelay = `${index * 0.15}s`;
+        });
+
+        // Click to copy port mapping
+        document.querySelectorAll('.mapping-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                const hostPort = item.querySelector('.host-port').textContent;
+                navigator.clipboard.writeText(`localhost:${hostPort}`);
+                
+                // Visual feedback
+                item.style.background = 'rgba(16, 185, 129, 0.2)';
+                setTimeout(() => {
+                    item.style.background = '';
+                }, 500);
+            });
+        });
+
+        // Container card click - open in browser (simulated)
+        containerCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const ports = card.querySelector('.container-ports').textContent;
+                const match = ports.match(/:?(\d+)/);
+                if (match) {
+                    card.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        card.style.transform = '';
+                    }, 150);
+                }
+            });
+        });
+
+        // Cluster section hover effects
+        document.querySelectorAll('.cluster-section').forEach(section => {
+            section.addEventListener('mouseenter', () => {
+                section.querySelectorAll('.container-card').forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.transform = 'translateY(-2px)';
+                    }, index * 50);
+                });
+            });
+
+            section.addEventListener('mouseleave', () => {
+                section.querySelectorAll('.container-card').forEach(card => {
+                    card.style.transform = '';
+                });
+            });
+        });
+
+        // Simulate container health check
+        function healthCheck() {
+            document.querySelectorAll('.container-status').forEach(status => {
+                // Random health check simulation
+                if (Math.random() > 0.98) {
+                    status.style.background = 'var(--accent-yellow)';
+                    setTimeout(() => {
+                        status.style.background = 'var(--accent-green)';
+                    }, 1000);
+                }
+            });
+        }
+
+        setInterval(healthCheck, 3000);
+    </script>
+</body>
+</html>

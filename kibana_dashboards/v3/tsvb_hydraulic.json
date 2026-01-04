@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "📊 Hydraulic Pressure Trend",
+    "visState": "{\"title\":\"Hydraulic Pressure Trend\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"hydraulic-001\",\"type\":\"timeseries\",\"series\":[{\"id\":\"series-avg\",\"color\":\"#3498DB\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-avg\",\"type\":\"avg\",\"field\":\"hydraulic_pressure_bar\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":2,\"point_size\":1,\"fill\":0.3,\"stacked\":\"none\",\"label\":\"Avg Pressure (bar)\"},{\"id\":\"series-min\",\"color\":\"#1ABC9C\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-min\",\"type\":\"min\",\"field\":\"hydraulic_pressure_bar\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":1,\"point_size\":0,\"fill\":0,\"stacked\":\"none\",\"label\":\"Min Pressure\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

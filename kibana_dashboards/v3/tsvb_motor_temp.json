@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "🌡️ Motor Temperature Trend",
+    "visState": "{\"title\":\"Motor Temperature Trend\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"motor-temp-001\",\"type\":\"timeseries\",\"series\":[{\"id\":\"series-avg\",\"color\":\"#E74C3C\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-avg\",\"type\":\"avg\",\"field\":\"motor_temperature_c\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":2,\"point_size\":1,\"fill\":0.2,\"stacked\":\"none\",\"label\":\"Avg Motor Temp (°C)\"},{\"id\":\"series-max\",\"color\":\"#9B59B6\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-max\",\"type\":\"max\",\"field\":\"motor_temperature_c\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":1,\"point_size\":0,\"fill\":0,\"stacked\":\"none\",\"label\":\"Max Motor Temp\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

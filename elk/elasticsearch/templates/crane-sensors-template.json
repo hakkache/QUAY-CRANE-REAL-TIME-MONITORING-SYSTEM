@@ -1,0 +1,28 @@
+{
+  "index_patterns": ["crane-sensors-*"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.refresh_interval": "10s"
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "timestamp": { "type": "date" },
+      "crane_id": { "type": "keyword" },
+      "sensor_type": { "type": "keyword" },
+      "value": { "type": "float" },
+      "unit": { "type": "keyword" },
+      "status": { "type": "keyword" },
+      "location": {
+        "properties": {
+          "lat": { "type": "float" },
+          "lon": { "type": "float" }
+        }
+      },
+      "kafka_topic": { "type": "keyword" },
+      "kafka_partition": { "type": "integer" },
+      "kafka_offset": { "type": "long" }
+    }
+  }
+}

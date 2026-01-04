@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "⚡ Power Consumption Trend",
+    "visState": "{\"title\":\"Power Consumption Trend\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"power-001\",\"type\":\"timeseries\",\"series\":[{\"id\":\"series-avg\",\"color\":\"#F39C12\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-avg\",\"type\":\"avg\",\"field\":\"power_consumption_kw\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":2,\"point_size\":1,\"fill\":0.3,\"stacked\":\"none\",\"label\":\"Avg Power (kW)\"},{\"id\":\"series-max\",\"color\":\"#E74C3C\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-max\",\"type\":\"max\",\"field\":\"power_consumption_kw\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":1,\"point_size\":0,\"fill\":0,\"stacked\":\"none\",\"label\":\"Max Power\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

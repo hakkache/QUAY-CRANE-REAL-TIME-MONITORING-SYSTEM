@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "📊 Sensor Events Timeline",
+    "visState": "{\"title\":\"Sensor Events Timeline\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"sensors-timeline\",\"type\":\"timeseries\",\"series\":[{\"id\":\"series-count\",\"color\":\"#3498DB\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-count\",\"type\":\"count\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"bar\",\"line_width\":1,\"point_size\":1,\"fill\":0.8,\"stacked\":\"none\",\"label\":\"Sensor Events\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

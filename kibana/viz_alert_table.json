@@ -1,0 +1,10 @@
+{
+  "attributes": {
+    "title": "Recent Alerts Table",
+    "visState": "{\"title\":\"Recent Alerts Table\",\"type\":\"table\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"crane_id.keyword\",\"orderBy\":\"1\",\"order\":\"desc\",\"size\":20},\"schema\":\"bucket\"},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"alert_type.keyword\",\"orderBy\":\"1\",\"order\":\"desc\",\"size\":10},\"schema\":\"bucket\"},{\"id\":\"4\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"severity.keyword\",\"orderBy\":\"1\",\"order\":\"desc\",\"size\":5},\"schema\":\"bucket\"}],\"params\":{\"perPage\":15,\"showPartialRows\":false,\"showMetricsAtAllLevels\":true,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":true,\"totalFunc\":\"sum\"}}",
+    "uiStateJSON": "{}",
+    "description": "Alert details by crane and type",
+    "kibanaSavedObjectMeta": {"searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"}
+  },
+  "references": [{"name": "kibanaSavedObjectMeta.searchSourceJSON.index", "type": "index-pattern", "id": "e4789af6-5e6d-4a51-9919-75e8f23bae36"}]
+}

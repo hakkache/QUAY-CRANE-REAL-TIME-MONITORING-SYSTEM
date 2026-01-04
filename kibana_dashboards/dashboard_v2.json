@@ -1,0 +1,41 @@
+{
+  "attributes": {
+    "title": "🏗️ Quay Crane Operations Dashboard",
+    "description": "Real-time monitoring dashboard for quay crane sensors, alerts, anomalies, and health metrics",
+    "panelsJSON": "[{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":0,\"w\":8,\"h\":5,\"i\":\"1\"},\"panelIndex\":\"1\",\"embeddableConfig\":{},\"panelRefName\":\"panel_1\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":8,\"y\":0,\"w\":8,\"h\":5,\"i\":\"2\"},\"panelIndex\":\"2\",\"embeddableConfig\":{},\"panelRefName\":\"panel_2\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":16,\"y\":0,\"w\":8,\"h\":5,\"i\":\"3\"},\"panelIndex\":\"3\",\"embeddableConfig\":{},\"panelRefName\":\"panel_3\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":0,\"w\":8,\"h\":5,\"i\":\"4\"},\"panelIndex\":\"4\",\"embeddableConfig\":{},\"panelRefName\":\"panel_4\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":32,\"y\":0,\"w\":8,\"h\":5,\"i\":\"5\"},\"panelIndex\":\"5\",\"embeddableConfig\":{},\"panelRefName\":\"panel_5\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":40,\"y\":0,\"w\":8,\"h\":5,\"i\":\"6\"},\"panelIndex\":\"6\",\"embeddableConfig\":{},\"panelRefName\":\"panel_6\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":5,\"w\":24,\"h\":10,\"i\":\"7\"},\"panelIndex\":\"7\",\"embeddableConfig\":{},\"panelRefName\":\"panel_7\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":5,\"w\":24,\"h\":10,\"i\":\"8\"},\"panelIndex\":\"8\",\"embeddableConfig\":{},\"panelRefName\":\"panel_8\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":15,\"w\":24,\"h\":10,\"i\":\"9\"},\"panelIndex\":\"9\",\"embeddableConfig\":{},\"panelRefName\":\"panel_9\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":15,\"w\":24,\"h\":10,\"i\":\"10\"},\"panelIndex\":\"10\",\"embeddableConfig\":{},\"panelRefName\":\"panel_10\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":25,\"w\":12,\"h\":10,\"i\":\"11\"},\"panelIndex\":\"11\",\"embeddableConfig\":{},\"panelRefName\":\"panel_11\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":12,\"y\":25,\"w\":12,\"h\":10,\"i\":\"12\"},\"panelIndex\":\"12\",\"embeddableConfig\":{},\"panelRefName\":\"panel_12\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":25,\"w\":12,\"h\":10,\"i\":\"13\"},\"panelIndex\":\"13\",\"embeddableConfig\":{},\"panelRefName\":\"panel_13\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":36,\"y\":25,\"w\":12,\"h\":10,\"i\":\"14\"},\"panelIndex\":\"14\",\"embeddableConfig\":{},\"panelRefName\":\"panel_14\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":35,\"w\":24,\"h\":10,\"i\":\"15\"},\"panelIndex\":\"15\",\"embeddableConfig\":{},\"panelRefName\":\"panel_15\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":35,\"w\":24,\"h\":10,\"i\":\"16\"},\"panelIndex\":\"16\",\"embeddableConfig\":{},\"panelRefName\":\"panel_16\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":45,\"w\":24,\"h\":10,\"i\":\"17\"},\"panelIndex\":\"17\",\"embeddableConfig\":{},\"panelRefName\":\"panel_17\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":45,\"w\":24,\"h\":10,\"i\":\"18\"},\"panelIndex\":\"18\",\"embeddableConfig\":{},\"panelRefName\":\"panel_18\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":55,\"w\":16,\"h\":12,\"i\":\"19\"},\"panelIndex\":\"19\",\"embeddableConfig\":{},\"panelRefName\":\"panel_19\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":16,\"y\":55,\"w\":16,\"h\":12,\"i\":\"20\"},\"panelIndex\":\"20\",\"embeddableConfig\":{},\"panelRefName\":\"panel_20\"},{\"version\":\"8.8.0\",\"type\":\"visualization\",\"gridData\":{\"x\":32,\"y\":55,\"w\":16,\"h\":12,\"i\":\"21\"},\"panelIndex\":\"21\",\"embeddableConfig\":{},\"panelRefName\":\"panel_21\"}]",
+    "optionsJSON": "{\"useMargins\":true,\"syncColors\":true,\"syncCursor\":true,\"syncTooltips\":true,\"hidePanelTitles\":false}",
+    "timeRestore": true,
+    "timeTo": "now",
+    "timeFrom": "now-24h",
+    "refreshInterval": {
+      "pause": false,
+      "value": 30000
+    },
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": [
+    {"name": "panel_1", "type": "visualization", "id": "kpi-total-events"},
+    {"name": "panel_2", "type": "visualization", "id": "kpi-total-alerts"},
+    {"name": "panel_3", "type": "visualization", "id": "kpi-total-anomalies"},
+    {"name": "panel_4", "type": "visualization", "id": "kpi-avg-health"},
+    {"name": "panel_5", "type": "visualization", "id": "kpi-active-cranes"},
+    {"name": "panel_6", "type": "visualization", "id": "kpi-avg-motor-temp"},
+    {"name": "panel_7", "type": "visualization", "id": "timeline-health-score"},
+    {"name": "panel_8", "type": "visualization", "id": "timeline-sensor-events"},
+    {"name": "panel_9", "type": "visualization", "id": "timeline-alerts"},
+    {"name": "panel_10", "type": "visualization", "id": "timeline-anomalies"},
+    {"name": "panel_11", "type": "visualization", "id": "pie-alerts-type"},
+    {"name": "panel_12", "type": "visualization", "id": "pie-alerts-crane"},
+    {"name": "panel_13", "type": "visualization", "id": "pie-anomalies-type"},
+    {"name": "panel_14", "type": "visualization", "id": "pie-severity"},
+    {"name": "panel_15", "type": "visualization", "id": "line-motor-temperature"},
+    {"name": "panel_16", "type": "visualization", "id": "line-power-consumption"},
+    {"name": "panel_17", "type": "visualization", "id": "line-vibration"},
+    {"name": "panel_18", "type": "visualization", "id": "line-hydraulic-pressure"},
+    {"name": "panel_19", "type": "visualization", "id": "table-alerts"},
+    {"name": "panel_20", "type": "visualization", "id": "table-anomalies"},
+    {"name": "panel_21", "type": "visualization", "id": "table-crane-health"}
+  ]
+}

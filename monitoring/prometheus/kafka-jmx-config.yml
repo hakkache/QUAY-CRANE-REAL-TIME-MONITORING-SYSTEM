@@ -1,0 +1,104 @@
+---
+startDelaySeconds: 0
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+rules:
+  # Kafka Server Metrics
+  - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+    name: kafka_server_$1_$2
+    type: GAUGE
+    labels:
+      clientId: "$3"
+      topic: "$4"
+      partition: "$5"
+      
+  - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+    name: kafka_server_$1_$2
+    type: GAUGE
+    labels:
+      clientId: "$3"
+      broker: "$4:$5"
+      
+  - pattern: kafka.server<type=(.+), name=(.+)><>Value
+    name: kafka_server_$1_$2
+    type: GAUGE
+
+  - pattern: kafka.server<type=(.+), name=(.+)><>Count
+    name: kafka_server_$1_$2_total
+    type: COUNTER
+
+  # Kafka Controller Metrics
+  - pattern: kafka.controller<type=(.+), name=(.+)><>(Count|Value)
+    name: kafka_controller_$1_$2
+    type: GAUGE
+
+  # Kafka Network Metrics
+  - pattern: kafka.network<type=(.+), name=(.+), request=(.+), error=(.+)><>Count
+    name: kafka_network_$1_$2_total
+    type: COUNTER
+    labels:
+      request: "$3"
+      error: "$4"
+      
+  - pattern: kafka.network<type=(.+), name=(.+), request=(.+)><>Count
+    name: kafka_network_$1_$2_total
+    type: COUNTER
+    labels:
+      request: "$3"
+      
+  - pattern: kafka.network<type=(.+), name=(.+)><>Value
+    name: kafka_network_$1_$2
+    type: GAUGE
+
+  # Kafka Log Metrics
+  - pattern: kafka.log<type=(.+), name=(.+), topic=(.+), partition=(.+)><>Value
+    name: kafka_log_$1_$2
+    type: GAUGE
+    labels:
+      topic: "$3"
+      partition: "$4"
+
+  # Kafka Broker Topic Metrics
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+), topic=(.+)><>Count
+    name: kafka_server_brokertopicmetrics_$1_total
+    type: COUNTER
+    labels:
+      topic: "$2"
+
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>Count
+    name: kafka_server_brokertopicmetrics_$1_total
+    type: COUNTER
+
+  # Request Metrics
+  - pattern: kafka.server<type=(.+), name=(.+), request=(.+)><>Count
+    name: kafka_server_$1_$2_total
+    type: COUNTER
+    labels:
+      request: "$3"
+
+  # JVM Metrics
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>(\w+)
+    name: jvm_memory_heap_$1
+    type: GAUGE
+    
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>(\w+)
+    name: jvm_memory_nonheap_$1
+    type: GAUGE
+
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+    name: jvm_gc_collection_count
+    type: COUNTER
+    labels:
+      gc: "$1"
+
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+    name: jvm_gc_collection_time_ms
+    type: COUNTER
+    labels:
+      gc: "$1"
+
+  - pattern: java.lang<type=Threading><>ThreadCount
+    name: jvm_threads_current
+    type: GAUGE

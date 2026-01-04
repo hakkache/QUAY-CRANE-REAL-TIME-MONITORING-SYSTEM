@@ -1,0 +1,32 @@
+{
+  "index_patterns": ["crane-metrics-*", "crane-health-*", "crane-throughput-*", "crane-anomalies-*", "crane-alert-summary-*"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.refresh_interval": "5s"
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "timestamp": { "type": "date" },
+      "window_start": { "type": "date" },
+      "window_end": { "type": "date" },
+      "crane_id": { "type": "keyword" },
+      "sensor_type": { "type": "keyword" },
+      "alert_type": { "type": "keyword" },
+      "severity": { "type": "keyword" },
+      "health_status": { "type": "keyword" },
+      "count": { "type": "long" },
+      "avg_value": { "type": "float" },
+      "min_value": { "type": "float" },
+      "max_value": { "type": "float" },
+      "sum_value": { "type": "float" },
+      "stddev_value": { "type": "float" },
+      "messages_processed": { "type": "long" },
+      "processing_time_ms": { "type": "float" },
+      "kafka_topic": { "type": "keyword" },
+      "kafka_partition": { "type": "integer" },
+      "kafka_offset": { "type": "long" }
+    }
+  }
+}

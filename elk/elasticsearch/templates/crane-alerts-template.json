@@ -1,0 +1,24 @@
+{
+  "index_patterns": ["crane-alerts-*"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.refresh_interval": "5s"
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "timestamp": { "type": "date" },
+      "crane_id": { "type": "keyword" },
+      "alert_type": { "type": "keyword" },
+      "severity": { "type": "keyword" },
+      "sensor_type": { "type": "keyword" },
+      "value": { "type": "float" },
+      "threshold": { "type": "float" },
+      "message": { "type": "text" },
+      "kafka_topic": { "type": "keyword" },
+      "kafka_partition": { "type": "integer" },
+      "kafka_offset": { "type": "long" }
+    }
+  }
+}

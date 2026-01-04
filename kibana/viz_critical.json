@@ -1,0 +1,10 @@
+{
+  "attributes": {
+    "title": "Critical Alerts Count",
+    "visState": "{\"title\":\"Critical Alerts Count\",\"type\":\"metric\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"}],\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"Labels\",\"colorsRange\":[{\"from\":0,\"to\":1},{\"from\":1,\"to\":100},{\"from\":100,\"to\":10000}],\"labels\":{\"show\":true},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"critical\",\"fontSize\":60}}}}",
+    "uiStateJSON": "{}",
+    "description": "Count of critical severity alerts",
+    "kibanaSavedObjectMeta": {"searchSourceJSON": "{\"query\":{\"query\":\"severity:critical\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"}
+  },
+  "references": [{"name": "kibanaSavedObjectMeta.searchSourceJSON.index", "type": "index-pattern", "id": "e4789af6-5e6d-4a51-9919-75e8f23bae36"}]
+}

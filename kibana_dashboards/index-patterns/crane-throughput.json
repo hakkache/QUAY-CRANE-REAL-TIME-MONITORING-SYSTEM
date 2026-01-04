@@ -1,0 +1,8 @@
+{
+  "type": "index-pattern",
+  "id": "crane-throughput",
+  "attributes": {
+    "title": "crane-throughput-*",
+    "timeFieldName": "@timestamp"
+  }
+}

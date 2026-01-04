@@ -1,0 +1,183 @@
+# ===================================
+# End-to-End Data Engineering Project
+# .gitignore
+# ===================================
+
+# -----------------
+# Python
+# -----------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# -----------------
+# IDE & Editors
+# -----------------
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# -----------------
+# OS Generated
+# -----------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -----------------
+# Docker
+# -----------------
+# Ignore docker volumes data (but keep structure)
+# These are mounted directories that contain runtime data
+
+# -----------------
+# Spark Checkpoints & State
+# -----------------
+mnt/checkpoints/*/commits/
+mnt/checkpoints/*/offsets/
+mnt/checkpoints/*/sources/
+mnt/checkpoints/*/state/
+mnt/checkpoints/**/metadata
+mnt/checkpoints/**/*.compact
+mnt/spark-state/**
+
+# Keep the checkpoint folder structure
+!mnt/checkpoints/
+!mnt/checkpoints/*/
+!mnt/checkpoints/*/.gitkeep
+!mnt/spark-state/
+!mnt/spark-state/.gitkeep
+
+# -----------------
+# Logs
+# -----------------
+*.log
+logs/
+log/
+*.log.*
+
+# -----------------
+# Environment Variables
+# -----------------
+.env
+.env.local
+.env.*.local
+*.env
+secrets.yaml
+secrets.yml
+
+# -----------------
+# Kafka Data
+# -----------------
+kafka-data/
+kafka-logs/
+zookeeper-data/
+
+# -----------------
+# Elasticsearch Data
+# -----------------
+elasticsearch-data/
+es-data/
+
+# -----------------
+# Temporary Files
+# -----------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# -----------------
+# Test & Coverage
+# -----------------
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
+# -----------------
+# Jupyter Notebooks
+# -----------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# -----------------
+# Build Artifacts
+# -----------------
+*.jar
+*.war
+*.ear
+target/
+
+# -----------------
+# Certificates & Keys
+# -----------------
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# -----------------
+# Large Data Files
+# -----------------
+*.csv
+*.parquet
+*.avro
+*.orc
+!sample_data/*.csv
+data/raw/
+data/processed/
+
+# -----------------
+# Node (if any frontend)
+# -----------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

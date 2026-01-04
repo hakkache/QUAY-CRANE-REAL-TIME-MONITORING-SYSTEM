@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "📈 Health Score Trend",
+    "visState": "{\"title\":\"Health Score Trend\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"61ca57f0-469d-11e7-af02-69e470af7417\",\"type\":\"timeseries\",\"series\":[{\"id\":\"61ca57f1-469d-11e7-af02-69e470af7417\",\"color\":\"#68BC00\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"61ca57f2-469d-11e7-af02-69e470af7417\",\"type\":\"avg\",\"field\":\"health_score\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":2,\"point_size\":1,\"fill\":0.3,\"stacked\":\"none\",\"label\":\"Avg Health Score\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false,\"background_color_rules\":[{\"id\":\"rule1\"}],\"bar_color_rules\":[{\"id\":\"rule2\"}],\"gauge_color_rules\":[{\"id\":\"rule3\"}],\"gauge_width\":10,\"gauge_inner_width\":10,\"gauge_style\":\"half\",\"filter\":{\"query\":\"\",\"language\":\"kuery\"},\"annotations\":[],\"axis_min\":\"0\",\"axis_max\":\"100\"}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

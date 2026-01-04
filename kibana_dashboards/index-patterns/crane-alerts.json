@@ -1,0 +1,8 @@
+{
+  "type": "index-pattern",
+  "id": "crane-alerts",
+  "attributes": {
+    "title": "crane-alerts-*",
+    "timeFieldName": "@timestamp"
+  }
+}

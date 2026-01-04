@@ -1,0 +1,20 @@
+{
+  "type": "visualization",
+  "id": "viz-total-anomalies",
+  "attributes": {
+    "title": "⚠️ Total Anomalies",
+    "visState": "{\"title\":\"Total Anomalies\",\"type\":\"metric\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{\"customLabel\":\"Anomalies\"},\"schema\":\"metric\"}],\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Yellow to Red\",\"metricColorMode\":\"Background\",\"colorsRange\":[{\"from\":0,\"to\":20},{\"from\":20,\"to\":50},{\"from\":50,\"to\":200}],\"labels\":{\"show\":true},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":true,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}}}",
+    "uiStateJSON": "{}",
+    "description": "Total count of anomalies",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
+    }
+  },
+  "references": [
+    {
+      "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
+      "type": "index-pattern",
+      "id": "crane-anomalies"
+    }
+  ]
+}

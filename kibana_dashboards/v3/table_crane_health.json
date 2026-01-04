@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "📋 Crane Health Summary",
+    "visState": "{\"title\":\"Crane Health Summary\",\"type\":\"table\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"avg\",\"params\":{\"field\":\"health_score\",\"customLabel\":\"Avg Health\"},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"avg\",\"params\":{\"field\":\"motor_temperature_c\",\"customLabel\":\"Avg Motor Temp\"},\"schema\":\"metric\"},{\"id\":\"3\",\"enabled\":true,\"type\":\"avg\",\"params\":{\"field\":\"power_consumption_kw\",\"customLabel\":\"Avg Power (kW)\"},\"schema\":\"metric\"},{\"id\":\"4\",\"enabled\":true,\"type\":\"count\",\"params\":{\"customLabel\":\"Events\"},\"schema\":\"metric\"},{\"id\":\"5\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"crane_id.keyword\",\"orderBy\":\"1\",\"order\":\"desc\",\"size\":20,\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"customLabel\":\"Crane ID\"},\"schema\":\"bucket\"}],\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMetricsAtAllLevels\":false,\"showTotal\":false,\"totalFunc\":\"sum\",\"percentageCol\":\"\"}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
+    }
+  },
+  "references": [{"name": "kibanaSavedObjectMeta.searchSourceJSON.index", "type": "index-pattern", "id": "crane-sensors"}]
+}

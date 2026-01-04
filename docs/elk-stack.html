@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELK Stack - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --elastic-yellow: #fed10a;
+            --elastic-teal: #00bfb3;
+            --logstash-green: #00bfb3;
+            --kibana-pink: #f04e98;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(254, 209, 10, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(0, 191, 179, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(240, 78, 152, 0.05) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(254, 209, 10, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(254, 209, 10, 0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--elastic-yellow), var(--elastic-teal));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--elastic-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .stack-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .stack-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .stack-badge.elastic {
+            background: rgba(254, 209, 10, 0.15);
+            color: var(--elastic-yellow);
+            border: 1px solid var(--elastic-yellow);
+        }
+
+        .stack-badge.logstash {
+            background: rgba(0, 191, 179, 0.15);
+            color: var(--logstash-green);
+            border: 1px solid var(--logstash-green);
+        }
+
+        .stack-badge.kibana {
+            background: rgba(240, 78, 152, 0.15);
+            color: var(--kibana-pink);
+            border: 1px solid var(--kibana-pink);
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--elastic-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Service Card Base */
+        .service-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .service-card.elasticsearch::before { background: var(--elastic-yellow); }
+        .service-card.logstash::before { background: var(--logstash-green); }
+        .service-card.kibana::before { background: var(--kibana-pink); }
+
+        .service-card.elasticsearch:hover { border-color: var(--elastic-yellow); box-shadow: 0 0 40px rgba(254, 209, 10, 0.2); }
+        .service-card.logstash:hover { border-color: var(--logstash-green); box-shadow: 0 0 40px rgba(0, 191, 179, 0.2); }
+        .service-card.kibana:hover { border-color: var(--kibana-pink); box-shadow: 0 0 40px rgba(240, 78, 152, 0.2); }
+
+        /* Service Header */
+        .service-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .service-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .service-icon {
+            font-size: 2rem;
+        }
+
+        .service-name h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .service-name h3.elasticsearch { color: var(--elastic-yellow); }
+        .service-name h3.logstash { color: var(--logstash-green); }
+        .service-name h3.kibana { color: var(--kibana-pink); }
+
+        .service-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+
+        .service-container {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .service-image {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Cluster Info Bar */
+        .cluster-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .cluster-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .cluster-label {
+            color: var(--text-muted);
+        }
+
+        .cluster-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--elastic-yellow);
+        }
+
+        /* Indices Grid */
+        .indices-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .indices-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .indices-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .index-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .index-card:hover {
+            border-color: var(--elastic-yellow);
+            transform: scale(1.02);
+        }
+
+        .index-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--elastic-yellow);
+            margin-bottom: 0.375rem;
+        }
+
+        .index-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .index-stat {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .index-stat span {
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Config Footer */
+        .config-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .config-label {
+            color: var(--text-muted);
+        }
+
+        .config-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        /* Pipeline Section */
+        .pipeline-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .pipeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .pipeline-file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--logstash-green);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Pipeline Stage */
+        .pipeline-stage {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .pipeline-stage:last-child {
+            margin-bottom: 0;
+        }
+
+        .stage-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stage-header.input { color: var(--accent-orange); }
+        .stage-header.filter { color: var(--accent-purple); }
+        .stage-header.output { color: var(--accent-green); }
+
+        .stage-content {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .stage-item {
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .stage-item::before {
+            content: '•';
+        }
+
+        .stage-item.input::before { color: var(--accent-orange); }
+        .stage-item.filter::before { color: var(--accent-purple); }
+        .stage-item.output::before { color: var(--accent-green); }
+
+        /* Consumer Groups Grid */
+        .consumers-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .consumer-badge {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.375rem 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--accent-cyan);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .consumer-badge:hover {
+            border-color: var(--logstash-green);
+            color: var(--logstash-green);
+        }
+
+        /* Pipeline Arrow */
+        .pipeline-arrow {
+            display: flex;
+            justify-content: center;
+            padding: 0.5rem 0;
+        }
+
+        .arrow-down {
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(180deg, var(--logstash-green), var(--accent-purple));
+            position: relative;
+        }
+
+        .arrow-down::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid var(--accent-purple);
+        }
+
+        /* Dashboard Section */
+        .dashboard-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--kibana-pink);
+            margin-bottom: 0.25rem;
+        }
+
+        .dashboard-version {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Visualization Grid */
+        .viz-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .viz-category {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .viz-category:hover {
+            border-color: var(--kibana-pink);
+            transform: scale(1.02);
+        }
+
+        .viz-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--kibana-pink);
+            margin-bottom: 0.25rem;
+        }
+
+        .viz-type {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .viz-items {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Dashboard Footer */
+        .dashboard-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .dashboard-stat {
+            text-align: center;
+        }
+
+        .dashboard-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .dashboard-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--kibana-pink);
+        }
+
+        /* Data Flow Arrow */
+        .data-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.75rem 0;
+        }
+
+        .flow-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .arrow-line {
+            width: 3px;
+            height: 35px;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .arrow-line.es-to-ls {
+            background: linear-gradient(180deg, var(--elastic-yellow), var(--logstash-green));
+        }
+
+        .arrow-line.ls-to-kb {
+            background: linear-gradient(180deg, var(--logstash-green), var(--kibana-pink));
+        }
+
+        .arrow-line::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+        }
+
+        .arrow-line.es-to-ls::after {
+            border-top: 10px solid var(--logstash-green);
+        }
+
+        .arrow-line.ls-to-kb::after {
+            border-top: 10px solid var(--kibana-pink);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.yellow { color: var(--elastic-yellow); }
+        .stat-value.teal { color: var(--logstash-green); }
+        .stat-value.pink { color: var(--kibana-pink); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .indices-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .viz-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .consumers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .stack-badges {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .cluster-info {
+                grid-template-columns: 1fr;
+            }
+
+            .indices-grid, .viz-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .consumers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .service-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .service-meta {
+                align-items: flex-start;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Health Status */
+        .health-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 20px;
+        }
+
+        .health-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: healthPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes healthPulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .health-text {
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Document counter animation */
+        .doc-counter {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--elastic-yellow);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div class="logo-text">
+                    <h1>ELK Stack</h1>
+                    <p>Elastic Stack Infrastructure</p>
+                </div>
+            </div>
+            <div class="stack-badges">
+                <span class="stack-badge elastic">Elasticsearch</span>
+                <span class="stack-badge logstash">Logstash</span>
+                <span class="stack-badge kibana">Kibana</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>📊 ELK Stack (Elastic Stack)</h2>
+            <p>Search, analytics, and visualization infrastructure - 3 containers</p>
+        </section>
+
+        <!-- Elasticsearch -->
+        <div class="service-card elasticsearch fade-in">
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">🔍</span>
+                    <div class="service-name">
+                        <h3 class="elasticsearch">ELASTICSEARCH</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: elasticsearch</span>
+                    <span class="service-image">elasticsearch:8.11.0</span>
+                </div>
+            </div>
+
+            <div class="cluster-info">
+                <div class="cluster-item">
+                    <span class="cluster-label">Cluster:</span>
+                    <span class="cluster-value">quay-crane-cluster</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">Mode:</span>
+                    <span class="cluster-value">Single Node</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">Security:</span>
+                    <span class="cluster-value">Disabled (dev)</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">REST API:</span>
+                    <span class="cluster-value">Port 9200</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">Transport:</span>
+                    <span class="cluster-value">Port 9300</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">Heap:</span>
+                    <span class="cluster-value">1GB (-Xms1g -Xmx1g)</span>
+                </div>
+            </div>
+
+            <div class="indices-section">
+                <div class="indices-header">📁 TIME-SERIES INDICES</div>
+                <div class="indices-grid">
+                    <div class="index-card">
+                        <div class="index-name">crane-sensors-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">~<span class="doc-counter" data-target="15000000">0</span> docs/day</div>
+                            <div class="index-stat">~<span>9.5 GB</span>/day</div>
+                        </div>
+                    </div>
+                    <div class="index-card">
+                        <div class="index-name">crane-alerts-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">~<span class="doc-counter" data-target="30000000">0</span> docs/day</div>
+                            <div class="index-stat">~<span>4.2 GB</span>/day</div>
+                        </div>
+                    </div>
+                    <div class="index-card">
+                        <div class="index-name">crane-anomalies-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">~<span class="doc-counter" data-target="10000000">0</span> docs/day</div>
+                            <div class="index-stat">~<span>1.3 GB</span>/day</div>
+                        </div>
+                    </div>
+                    <div class="index-card">
+                        <div class="index-name">crane-metrics-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">Aggregated data</div>
+                            <div class="index-stat">1-min & 5-min</div>
+                        </div>
+                    </div>
+                    <div class="index-card">
+                        <div class="index-name">crane-health-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">Health scores</div>
+                            <div class="index-stat">per crane</div>
+                        </div>
+                    </div>
+                    <div class="index-card">
+                        <div class="index-name">crane-throughput-*</div>
+                        <div class="index-stats">
+                            <div class="index-stat">Throughput metrics</div>
+                            <div class="index-stat">containers/hour</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-footer">
+                <div class="config-item">
+                    <span class="config-label">📁 Volume:</span>
+                    <span class="config-value">elasticsearch_data:/usr/share/elasticsearch/data</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">🏥 Health Check:</span>
+                    <span class="config-value">curl localhost:9200/_cluster/health</span>
+                </div>
+                <div class="health-status">
+                    <div class="health-dot"></div>
+                    <span class="health-text">green</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flow Arrow -->
+        <div class="data-flow">
+            <div class="flow-arrow">
+                <div class="arrow-line es-to-ls"></div>
+            </div>
+        </div>
+
+        <!-- Logstash -->
+        <div class="service-card logstash fade-in">
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">📥</span>
+                    <div class="service-name">
+                        <h3 class="logstash">LOGSTASH</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: logstash</span>
+                    <span class="service-image">logstash:8.11.0</span>
+                </div>
+            </div>
+
+            <div class="pipeline-section">
+                <div class="pipeline-header">
+                    ⚙️ PIPELINE
+                    <span class="pipeline-file">kafka-to-elastic.conf</span>
+                </div>
+
+                <!-- Input Stage -->
+                <div class="pipeline-stage">
+                    <div class="stage-header input">INPUT (Kafka Consumer)</div>
+                    <div class="stage-content">
+                        <div class="stage-item input">Bootstrap: kafka-broker-1:19092, kafka-broker-2:19092, kafka-broker-3:19092</div>
+                    </div>
+                    <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-primary);">Consumer Groups (8 total):</div>
+                    <div class="consumers-grid">
+                        <div class="consumer-badge">crane_sensors</div>
+                        <div class="consumer-badge">crane_alerts</div>
+                        <div class="consumer-badge">crane_anomalies</div>
+                        <div class="consumer-badge">crane_metrics_1</div>
+                        <div class="consumer-badge">crane_metrics_5</div>
+                        <div class="consumer-badge">crane_health</div>
+                        <div class="consumer-badge">crane_through</div>
+                        <div class="consumer-badge">alert_summary</div>
+                    </div>
+                </div>
+
+                <div class="pipeline-arrow">
+                    <div class="arrow-down"></div>
+                </div>
+
+                <!-- Filter Stage -->
+                <div class="pipeline-stage">
+                    <div class="stage-header filter">FILTER (Transform & Enrich)</div>
+                    <div class="stage-content">
+                        <div class="stage-item filter">date {} - Parse @timestamp from epoch</div>
+                        <div class="stage-item filter">mutate {} - Rename fields, type conversion</div>
+                        <div class="stage-item filter">ruby {} - Custom health categorization</div>
+                    </div>
+                </div>
+
+                <div class="pipeline-arrow">
+                    <div class="arrow-down" style="background: linear-gradient(180deg, var(--accent-purple), var(--accent-green));"></div>
+                </div>
+
+                <!-- Output Stage -->
+                <div class="pipeline-stage">
+                    <div class="stage-header output">OUTPUT (Elasticsearch)</div>
+                    <div class="stage-content">
+                        <div class="stage-item output">hosts: ["elasticsearch:9200"]</div>
+                        <div class="stage-item output">index: "crane-%{type}-%{+YYYY.MM.dd}"</div>
+                        <div class="stage-item output">ILM: enabled (Index Lifecycle Management)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-footer">
+                <div class="config-item">
+                    <span class="config-label">Ports:</span>
+                    <span class="config-value">5044 (Beats), 9600 (API)</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Heap:</span>
+                    <span class="config-value">512MB (-Xms512m -Xmx512m)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flow Arrow -->
+        <div class="data-flow">
+            <div class="flow-arrow">
+                <div class="arrow-line ls-to-kb"></div>
+            </div>
+        </div>
+
+        <!-- Kibana -->
+        <div class="service-card kibana fade-in">
+            <div class="service-header">
+                <div class="service-title">
+                    <span class="service-icon">📈</span>
+                    <div class="service-name">
+                        <h3 class="kibana">KIBANA</h3>
+                    </div>
+                </div>
+                <div class="service-meta">
+                    <span class="service-container">Container: kibana</span>
+                    <span class="service-image">kibana:8.11.0</span>
+                </div>
+            </div>
+
+            <div class="cluster-info" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="cluster-item">
+                    <span class="cluster-label">Port:</span>
+                    <span class="cluster-value" style="color: var(--kibana-pink);">5601</span>
+                </div>
+                <div class="cluster-item">
+                    <span class="cluster-label">Elasticsearch:</span>
+                    <span class="cluster-value" style="color: var(--kibana-pink);">http://elasticsearch:9200</span>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="dashboard-header">
+                    <div class="dashboard-title">🎯 Quay Crane Operations - Complete Dashboard v3</div>
+                    <div class="dashboard-version">21 Visualization Panels</div>
+                </div>
+
+                <div class="viz-grid">
+                    <div class="viz-category">
+                        <div class="viz-count">6</div>
+                        <div class="viz-type">KPI Metrics</div>
+                        <div class="viz-items">Events, Alerts, Anomalies, Health, Temp, Cranes</div>
+                    </div>
+                    <div class="viz-category">
+                        <div class="viz-count">6</div>
+                        <div class="viz-type">TSVB Time Series</div>
+                        <div class="viz-items">Health, Temp, Power, Pressure, Wind, Load</div>
+                    </div>
+                    <div class="viz-category">
+                        <div class="viz-count">3</div>
+                        <div class="viz-type">Bar Timelines</div>
+                        <div class="viz-items">Alerts, Anomalies, Sensors</div>
+                    </div>
+                    <div class="viz-category">
+                        <div class="viz-count">4</div>
+                        <div class="viz-type">Pie/Donut Charts</div>
+                        <div class="viz-items">Alert Types, Crane Dist., Severity</div>
+                    </div>
+                    <div class="viz-category">
+                        <div class="viz-count">2</div>
+                        <div class="viz-type">Data Tables</div>
+                        <div class="viz-items">Crane Health, Recent Anomalies</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-footer">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-label">Auto-refresh</div>
+                        <div class="dashboard-stat-value">30 seconds</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-label">Time Range</div>
+                        <div class="dashboard-stat-value">Last 24 hours</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value yellow">3</div>
+                <div class="stat-label">Containers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value teal">8</div>
+                <div class="stat-label">Consumer Groups</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value pink">21</div>
+                <div class="stat-label">Visualizations</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value cyan">6</div>
+                <div class="stat-label">Indices</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Animate document counters
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = target / 100;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = formatNumber(Math.floor(current));
+            }, 20);
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(0) + 'K';
+            }
+            return num;
+        }
+
+        // Start counter animations when visible
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = entry.target.querySelectorAll('.doc-counter');
+                    counters.forEach(counter => {
+                        const target = parseInt(counter.getAttribute('data-target'));
+                        animateCounter(counter, target);
+                    });
+                    counterObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.indices-section').forEach(section => {
+            counterObserver.observe(section);
+        });
+
+        // Index card hover effects
+        document.querySelectorAll('.index-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Consumer badge click to copy
+        document.querySelectorAll('.consumer-badge').forEach(badge => {
+            badge.style.cursor = 'pointer';
+            badge.addEventListener('click', () => {
+                navigator.clipboard.writeText(badge.textContent);
+                badge.style.background = 'rgba(16, 185, 129, 0.3)';
+                badge.style.borderColor = 'var(--accent-green)';
+                setTimeout(() => {
+                    badge.style.background = '';
+                    badge.style.borderColor = '';
+                }, 500);
+            });
+        });
+
+        // Simulate pipeline activity
+        function simulatePipeline() {
+            const stages = document.querySelectorAll('.pipeline-stage');
+            stages.forEach((stage, index) => {
+                setTimeout(() => {
+                    stage.style.borderColor = 'var(--logstash-green)';
+                    stage.style.boxShadow = '0 0 15px rgba(0, 191, 179, 0.3)';
+                    setTimeout(() => {
+                        stage.style.borderColor = 'var(--border-color)';
+                        stage.style.boxShadow = '';
+                    }, 400);
+                }, index * 300);
+            });
+        }
+
+        // Run pipeline animation every 5 seconds
+        setInterval(simulatePipeline, 5000);
+        setTimeout(simulatePipeline, 2000);
+
+        // Visualization category hover
+        document.querySelectorAll('.viz-category').forEach(cat => {
+            cat.addEventListener('mouseenter', () => {
+                cat.querySelector('.viz-count').style.transform = 'scale(1.2)';
+                cat.querySelector('.viz-count').style.transition = 'transform 0.3s ease';
+            });
+            cat.addEventListener('mouseleave', () => {
+                cat.querySelector('.viz-count').style.transform = '';
+            });
+        });
+
+        // Health status animation
+        function updateHealthStatus() {
+            const healthDot = document.querySelector('.health-dot');
+            const healthText = document.querySelector('.health-text');
+            
+            // Simulate occasional yellow status
+            if (Math.random() > 0.95) {
+                healthDot.style.background = 'var(--accent-yellow)';
+                healthText.textContent = 'yellow';
+                healthText.style.color = 'var(--accent-yellow)';
+                setTimeout(() => {
+                    healthDot.style.background = 'var(--accent-green)';
+                    healthText.textContent = 'green';
+                    healthText.style.color = 'var(--accent-green)';
+                }, 2000);
+            }
+        }
+
+        setInterval(updateHealthStatus, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "attributes": {
+    "title": "Safety System Status",
+    "visState": "{\"title\":\"Safety System Status\",\"type\":\"pie\",\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"safety_system_status.keyword\",\"orderBy\":\"1\",\"order\":\"desc\",\"size\":10},\"schema\":\"segment\"}],\"params\":{\"type\":\"pie\",\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":true,\"labels\":{\"show\":true,\"values\":true,\"last_level\":true,\"truncate\":100}}}",
+    "uiStateJSON": "{\"vis\":{\"colors\":{\"active\":\"#7EB26D\",\"inactive\":\"#E24D42\",\"maintenance\":\"#EAB839\"}}}",
+    "description": "Safety system status breakdown",
+    "kibanaSavedObjectMeta": {"searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"}
+  },
+  "references": [{"name": "kibanaSavedObjectMeta.searchSourceJSON.index", "type": "index-pattern", "id": "929c7f13-8569-481c-b4f1-9f6b687c7f22"}]
+}

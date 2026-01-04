@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Topic Message Flow - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --kafka-primary: #231f20;
+            --kafka-accent: #ff6b35;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --glow-kafka: 0 0 30px rgba(255, 107, 53, 0.3);
+            --glow-blue: 0 0 30px rgba(59, 130, 246, 0.3);
+            --glow-green: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(255, 107, 53, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 53, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--kafka-primary), #3d3d3d);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 2px solid var(--kafka-accent);
+        }
+
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--kafka-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .header-stat {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+
+        .header-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--kafka-accent);
+        }
+
+        .header-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem 3rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--kafka-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Flow Container */
+        .flow-container {
+            display: grid;
+            grid-template-columns: 220px 1fr 220px;
+            gap: 2rem;
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        /* Producer/Consumer Columns */
+        .endpoint-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .endpoint-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .endpoint-card.producer::before {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .endpoint-card.consumer::before {
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+        }
+
+        .endpoint-card:hover {
+            transform: scale(1.02);
+            box-shadow: var(--glow-blue);
+        }
+
+        .endpoint-card.consumer:hover {
+            box-shadow: var(--glow-green);
+        }
+
+        .endpoint-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .endpoint-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .endpoint-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .endpoint-badge {
+            display: inline-block;
+            margin-top: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Topics Column */
+        .topics-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .topics-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .topics-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .topics-section.source::before {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .topics-section.processed::before {
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-yellow));
+        }
+
+        .topics-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .topics-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .topics-section-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid var(--kafka-accent);
+            border-radius: 20px;
+            color: var(--kafka-accent);
+        }
+
+        /* Topic Cards */
+        .topic-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .topic-card.sensors::before { background: var(--accent-blue); }
+        .topic-card.alerts::before { background: var(--accent-red); }
+        .topic-card.performance::before { background: var(--accent-green); }
+        .topic-card.metrics::before { background: var(--accent-cyan); }
+        .topic-card.health::before { background: var(--accent-purple); }
+        .topic-card.anomalies::before { background: var(--accent-orange); }
+        .topic-card.throughput::before { background: var(--accent-yellow); }
+        .topic-card.summary::before { background: var(--accent-pink); }
+
+        .topic-card:hover {
+            border-color: var(--kafka-accent);
+            transform: translateX(5px);
+        }
+
+        .topic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .topic-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--kafka-accent);
+        }
+
+        .topic-config {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .topic-description {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .topic-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topic-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .topic-field {
+            font-size: 0.6rem;
+            padding: 0.125rem 0.375rem;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .topic-rate {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .rate-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Flow arrows */
+        .flow-arrows {
+            position: absolute;
+            top: 0;
+            left: 220px;
+            right: 220px;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .arrow-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Animated particles */
+        .particle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .data-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--kafka-accent);
+            box-shadow: 0 0 10px var(--kafka-accent);
+        }
+
+        /* Configuration Section */
+        .config-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .config-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--kafka-accent), var(--accent-orange));
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+
+        .config-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .config-item:hover {
+            border-color: var(--kafka-accent);
+            transform: translateY(-3px);
+        }
+
+        .config-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .config-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .config-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--kafka-accent);
+        }
+
+        /* Topic List Overview */
+        .topics-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .overview-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .overview-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .overview-card.input::before { background: var(--accent-blue); }
+        .overview-card.output::before { background: var(--accent-green); }
+        .overview-card.total::before { background: var(--kafka-accent); }
+
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .overview-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .overview-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .overview-card.input .overview-count { color: var(--accent-blue); }
+        .overview-card.output .overview-count { color: var(--accent-green); }
+        .overview-card.total .overview-count { color: var(--kafka-accent); }
+
+        .overview-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .overview-topic {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.orange { color: var(--kafka-accent); }
+        .stat-value.blue { color: var(--accent-blue); }
+        .stat-value.green { color: var(--accent-green); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+        .stat-value.purple { color: var(--accent-purple); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .flow-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .endpoint-column {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .config-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .topics-overview {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 1.5rem;
+            }
+
+            .header-stats {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .config-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-footer {
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Message flow animation */
+        @keyframes flowRight {
+            0% { transform: translateX(-20px); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(20px); opacity: 0; }
+        }
+
+        .topic-card .flow-indicator {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            animation: flowRight 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📦</div>
+                <div class="logo-text">
+                    <h1>Kafka Topic Message Flow</h1>
+                    <p>Quay Crane Monitoring System</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-value">9</div>
+                    <div class="header-stat-label">Topics</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value">45</div>
+                    <div class="header-stat-label">Partitions</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="liveRate">10.5K</div>
+                    <div class="header-stat-label">msg/sec</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🔄 Kafka Topic Message Flow</h2>
+            <p>Detailed message routing from producers through topics to consumers</p>
+        </section>
+
+        <!-- Flow Container -->
+        <div class="flow-container fade-in">
+            <!-- Producers -->
+            <div class="endpoint-column">
+                <div class="endpoint-card producer">
+                    <div class="endpoint-icon">🐍</div>
+                    <div class="endpoint-title">Python Producer</div>
+                    <div class="endpoint-subtitle">High-throughput data generation</div>
+                    <div class="endpoint-badge">12 processes</div>
+                </div>
+                <div class="endpoint-card producer" style="margin-top: 2rem;">
+                    <div class="endpoint-icon">⚡</div>
+                    <div class="endpoint-title">Spark Cluster</div>
+                    <div class="endpoint-subtitle">Stream processing output</div>
+                    <div class="endpoint-badge">3 workers</div>
+                </div>
+            </div>
+
+            <!-- Topics -->
+            <div class="topics-column">
+                <!-- Source Topics -->
+                <div class="topics-section source">
+                    <div class="topics-section-header">
+                        <span class="topics-section-title">📤 Source Topics (Producer → Kafka)</span>
+                        <span class="topics-section-badge">3 Topics</span>
+                    </div>
+                    
+                    <div class="topic-card sensors">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_sensors</span>
+                            <span class="topic-config">5 part · RF=3</span>
+                        </div>
+                        <div class="topic-description">Raw sensor data: temperature, pressure, load, vibration, wind, power consumption</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">temp</span>
+                                <span class="topic-field">pressure</span>
+                                <span class="topic-field">load</span>
+                                <span class="topic-field">vibration</span>
+                                <span class="topic-field">wind</span>
+                                <span class="topic-field">power</span>
+                            </div>
+                            <div class="topic-rate"><span class="rate-dot"></span>~2,335/sec</div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card alerts">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_alerts</span>
+                            <span class="topic-config">5 part · RF=3</span>
+                        </div>
+                        <div class="topic-description">Alert events: HIGH_TEMP, OVERLOAD, HIGH_VIBRATION, LOW_PRESSURE</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">alert_type</span>
+                                <span class="topic-field">severity</span>
+                                <span class="topic-field">crane_id</span>
+                                <span class="topic-field">timestamp</span>
+                            </div>
+                            <div class="topic-rate"><span class="rate-dot"></span>~4,356/sec</div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card performance">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_performance</span>
+                            <span class="topic-config">5 part · RF=3</span>
+                        </div>
+                        <div class="topic-description">Cycle metrics: containers moved, cycle time, efficiency percentage</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">containers</span>
+                                <span class="topic-field">cycle_time</span>
+                                <span class="topic-field">efficiency</span>
+                            </div>
+                            <div class="topic-rate"><span class="rate-dot"></span>~500/sec</div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+                </div>
+
+                <!-- Processed Topics -->
+                <div class="topics-section processed">
+                    <div class="topics-section-header">
+                        <span class="topics-section-title">⚡ Processed Topics (Spark → Kafka)</span>
+                        <span class="topics-section-badge">6 Topics</span>
+                    </div>
+
+                    <div class="topic-card metrics">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_metrics_1min</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">1-minute aggregations: avg temp, avg pressure, avg power by crane</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">crane_id</span>
+                                <span class="topic-field">window_start</span>
+                                <span class="topic-field">window_end</span>
+                                <span class="topic-field">avg_*</span>
+                            </div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card metrics">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_metrics_5min</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">5-minute aggregations: trends, statistical analysis, stddev</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">avg</span>
+                                <span class="topic-field">stddev</span>
+                                <span class="topic-field">min</span>
+                                <span class="topic-field">max</span>
+                            </div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card health">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_health_status</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">Real-time health: health_score (0-100), status (GOOD/WARNING/CRITICAL)</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">health_score</span>
+                                <span class="topic-field">status</span>
+                                <span class="topic-field">factors</span>
+                            </div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card anomalies">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_anomalies</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">Detected anomalies: type, severity, crane_id, timestamp</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">anomaly_type</span>
+                                <span class="topic-field">severity</span>
+                                <span class="topic-field">value</span>
+                            </div>
+                            <div class="topic-rate"><span class="rate-dot"></span>~3,819/sec</div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card throughput">
+                        <div class="topic-header">
+                            <span class="topic-name">crane_throughput</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">Throughput: containers/hour, cycle efficiency, utilization rate</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">containers_hour</span>
+                                <span class="topic-field">efficiency</span>
+                                <span class="topic-field">utilization</span>
+                            </div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+
+                    <div class="topic-card summary">
+                        <div class="topic-header">
+                            <span class="topic-name">alert_summary</span>
+                            <span class="topic-config">auto-created</span>
+                        </div>
+                        <div class="topic-description">1-min summary: alert counts by type, by crane, by severity</div>
+                        <div class="topic-meta">
+                            <div class="topic-fields">
+                                <span class="topic-field">alert_count</span>
+                                <span class="topic-field">by_type</span>
+                                <span class="topic-field">by_severity</span>
+                            </div>
+                        </div>
+                        <span class="flow-indicator">→</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consumers -->
+            <div class="endpoint-column">
+                <div class="endpoint-card consumer">
+                    <div class="endpoint-icon">🔧</div>
+                    <div class="endpoint-title">Logstash</div>
+                    <div class="endpoint-subtitle">Data pipeline to Elasticsearch</div>
+                    <div class="endpoint-badge">8 consumer groups</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Topic Overview Cards -->
+        <div class="topics-overview fade-in">
+            <div class="overview-card input">
+                <div class="overview-header">
+                    <span class="overview-title">📤 Input Topics</span>
+                    <span class="overview-count">3</span>
+                </div>
+                <div class="overview-list">
+                    <span class="overview-topic">crane_sensors</span>
+                    <span class="overview-topic">crane_alerts</span>
+                    <span class="overview-topic">crane_performance</span>
+                </div>
+            </div>
+            <div class="overview-card output">
+                <div class="overview-header">
+                    <span class="overview-title">📥 Output Topics</span>
+                    <span class="overview-count">6</span>
+                </div>
+                <div class="overview-list">
+                    <span class="overview-topic">crane_metrics_1min</span>
+                    <span class="overview-topic">crane_metrics_5min</span>
+                    <span class="overview-topic">crane_health_status</span>
+                    <span class="overview-topic">crane_anomalies</span>
+                    <span class="overview-topic">crane_throughput</span>
+                    <span class="overview-topic">alert_summary</span>
+                </div>
+            </div>
+            <div class="overview-card total">
+                <div class="overview-header">
+                    <span class="overview-title">📊 Total Throughput</span>
+                    <span class="overview-count" id="totalThroughput">10.5K+</span>
+                </div>
+                <div class="overview-list">
+                    <span class="overview-topic">~7,191 input/sec</span>
+                    <span class="overview-topic">~3,884 output/sec</span>
+                    <span class="overview-topic">RF=3 replication</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="config-section fade-in" style="position: relative; margin-top: 2rem;">
+            <div class="config-header">
+                <span class="config-title">⚙️ Topic Configuration</span>
+            </div>
+            <div class="config-grid">
+                <div class="config-item">
+                    <div class="config-icon">📊</div>
+                    <div class="config-label">Partitions</div>
+                    <div class="config-value">5 per topic</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-icon">🔄</div>
+                    <div class="config-label">Replication</div>
+                    <div class="config-value">RF = 3</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-icon">🔑</div>
+                    <div class="config-label">Partition Key</div>
+                    <div class="config-value">crane_id</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-icon">📅</div>
+                    <div class="config-label">Retention</div>
+                    <div class="config-value">7 days</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-icon">🗜️</div>
+                    <div class="config-label">Compression</div>
+                    <div class="config-value">lz4</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value orange">9</div>
+                <div class="stat-label">Total Topics</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value blue">3</div>
+                <div class="stat-label">Brokers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value green">45</div>
+                <div class="stat-label">Partitions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value cyan">8</div>
+                <div class="stat-label">Consumer Groups</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value purple">3x</div>
+                <div class="stat-label">Replication</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Live rate updates
+        function updateRates() {
+            const baseRates = {
+                sensors: 2335,
+                alerts: 4356,
+                performance: 500,
+                anomalies: 3819
+            };
+
+            // Update individual topic rates
+            document.querySelectorAll('.topic-rate').forEach((el, index) => {
+                const rates = [baseRates.sensors, baseRates.alerts, baseRates.performance, null, null, null, baseRates.anomalies];
+                if (rates[index]) {
+                    const variance = Math.floor(Math.random() * 200 - 100);
+                    const newRate = rates[index] + variance;
+                    el.innerHTML = `<span class="rate-dot"></span>~${newRate.toLocaleString()}/sec`;
+                }
+            });
+
+            // Update header rate
+            const totalRate = (baseRates.sensors + baseRates.alerts + baseRates.performance + baseRates.anomalies + Math.random() * 500) / 1000;
+            document.getElementById('liveRate').textContent = totalRate.toFixed(1) + 'K';
+            document.getElementById('totalThroughput').textContent = totalRate.toFixed(1) + 'K+';
+        }
+
+        setInterval(updateRates, 2000);
+
+        // Topic card hover effects
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const indicator = card.querySelector('.flow-indicator');
+                if (indicator) {
+                    indicator.style.color = 'var(--kafka-accent)';
+                    indicator.style.transform = 'translateY(-50%) scale(1.2)';
+                }
+            });
+            card.addEventListener('mouseleave', () => {
+                const indicator = card.querySelector('.flow-indicator');
+                if (indicator) {
+                    indicator.style.color = 'var(--text-muted)';
+                    indicator.style.transform = 'translateY(-50%) scale(1)';
+                }
+            });
+        });
+
+        // Add click to show topic details
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const topicName = card.querySelector('.topic-name').textContent;
+                card.style.boxShadow = '0 0 30px rgba(255, 107, 53, 0.5)';
+                setTimeout(() => {
+                    card.style.boxShadow = '';
+                }, 500);
+            });
+        });
+
+        // Animate config items on load
+        document.querySelectorAll('.config-item').forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                item.style.transition = 'all 0.5s ease';
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            }, 100 * index + 500);
+        });
+
+        // Create flowing particles
+        function createParticle() {
+            const container = document.querySelector('.flow-container');
+            if (!container) return;
+
+            const particle = document.createElement('div');
+            particle.className = 'data-particle';
+            particle.style.cssText = `
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                background: var(--kafka-accent);
+                border-radius: 50%;
+                box-shadow: 0 0 10px var(--kafka-accent);
+                z-index: 5;
+                pointer-events: none;
+            `;
+
+            const startY = Math.random() * container.offsetHeight;
+            particle.style.top = startY + 'px';
+            particle.style.left = '220px';
+
+            container.appendChild(particle);
+
+            // Animate across
+            let pos = 220;
+            const animate = () => {
+                pos += 3;
+                particle.style.left = pos + 'px';
+                particle.style.opacity = 1 - (pos - 220) / (container.offsetWidth - 440);
+
+                if (pos < container.offsetWidth - 220) {
+                    requestAnimationFrame(animate);
+                } else {
+                    particle.remove();
+                }
+            };
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start particle animation
+        setInterval(createParticle, 300);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Source Layer - Quay Crane IoT Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --python-blue: #3776ab;
+            --python-yellow: #ffd43b;
+            --kafka-orange: #ff6b35;
+            --crane-teal: #14b8a6;
+            --sensor-lime: #84cc16;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(55, 118, 171, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(255, 212, 59, 0.05) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(20, 184, 166, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 184, 166, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--crane-teal), var(--sensor-lime));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--crane-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .live-stats {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .live-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .live-stat .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .live-stat .dot.green { background: var(--accent-green); }
+        .live-stat .dot.orange { background: var(--accent-orange); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .live-stat .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .live-stat .value.green { color: var(--accent-green); }
+        .live-stat .value.orange { color: var(--accent-orange); }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--crane-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Physical Layer Card */
+        .physical-layer {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .physical-layer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--crane-teal), var(--sensor-lime));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .layer-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .layer-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--crane-teal);
+            margin-bottom: 0.25rem;
+        }
+
+        .layer-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Crane Grid */
+        .cranes-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cranes-header {
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .cranes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .crane-card {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .crane-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--crane-teal);
+        }
+
+        .crane-card:hover {
+            border-color: var(--crane-teal);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(20, 184, 166, 0.2);
+        }
+
+        .crane-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .crane-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--crane-teal);
+            margin-bottom: 0.5rem;
+        }
+
+        .crane-specs {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .crane-spec {
+            padding: 0.125rem 0;
+        }
+
+        .crane-spec span {
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .crane-status {
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-text {
+            font-size: 0.65rem;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Connection Lines */
+        .crane-connections {
+            display: flex;
+            justify-content: center;
+            padding: 0.75rem 0;
+        }
+
+        .connection-hub {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .connection-lines-top {
+            display: flex;
+            gap: 8rem;
+        }
+
+        .conn-line {
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(180deg, var(--crane-teal), var(--sensor-lime));
+        }
+
+        .conn-horizontal {
+            width: 100%;
+            height: 2px;
+            background: var(--crane-teal);
+            margin-top: -1px;
+        }
+
+        .conn-center {
+            width: 2px;
+            height: 20px;
+            background: var(--sensor-lime);
+        }
+
+        .conn-arrow {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--sensor-lime);
+        }
+
+        /* Sensor Data Section */
+        .sensors-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .sensors-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--sensor-lime);
+            margin-bottom: 1rem;
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+
+        .sensor-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.875rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .sensor-card:hover {
+            border-color: var(--sensor-lime);
+            transform: scale(1.02);
+        }
+
+        .sensor-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+        }
+
+        .sensor-range {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .sensor-value {
+            margin-top: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--sensor-lime);
+        }
+
+        /* Python Producer Section */
+        .producer-section {
+            background: var(--bg-card);
+            border: 2px solid var(--python-blue);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .producer-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--python-blue), var(--python-yellow));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .producer-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .producer-icon {
+            font-size: 1.5rem;
+        }
+
+        .producer-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--python-yellow);
+        }
+
+        .producer-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Files Section */
+        .files-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .files-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--python-yellow);
+            background: var(--bg-primary);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--python-blue);
+        }
+
+        /* Processes Grid */
+        .processes-section {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .processes-header {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .processes-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .process-badge {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--python-blue), var(--python-yellow));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--bg-primary);
+            transition: all 0.3s ease;
+        }
+
+        .process-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(55, 118, 171, 0.4);
+        }
+
+        .process-badge.active {
+            animation: processActive 1s ease-in-out infinite;
+        }
+
+        @keyframes processActive {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 59, 0.4); }
+            50% { box-shadow: 0 0 15px 5px rgba(255, 212, 59, 0.4); }
+        }
+
+        .batch-info {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .batch-info span {
+            color: var(--python-yellow);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Kafka Connection */
+        .kafka-connection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .kafka-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .kafka-library {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--kafka-orange);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+        }
+
+        .kafka-arrow {
+            width: 3px;
+            height: 30px;
+            background: linear-gradient(180deg, var(--python-yellow), var(--kafka-orange));
+            position: relative;
+        }
+
+        .kafka-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--kafka-orange);
+        }
+
+        .bootstrap-servers {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--kafka-orange);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .bootstrap-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .bootstrap-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .bootstrap-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--kafka-orange);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.teal { color: var(--crane-teal); }
+        .stat-value.lime { color: var(--sensor-lime); }
+        .stat-value.blue { color: var(--python-blue); }
+        .stat-value.yellow { color: var(--python-yellow); }
+        .stat-value.orange { color: var(--kafka-orange); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .cranes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .sensors-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .live-stats {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .cranes-grid,
+            .sensors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connection-lines-top {
+                gap: 2rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Data particles */
+        .data-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--sensor-lime);
+            border-radius: 50%;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🚢</div>
+                <div class="logo-text">
+                    <h1>Data Source Layer</h1>
+                    <p>IoT Sensor Simulation</p>
+                </div>
+            </div>
+            <div class="live-stats">
+                <div class="live-stat">
+                    <span class="dot green"></span>
+                    <span>6 Cranes</span>
+                    <span class="value green">ONLINE</span>
+                </div>
+                <div class="live-stat">
+                    <span class="dot orange"></span>
+                    <span>Rate:</span>
+                    <span class="value orange" id="msg-rate">300</span>
+                    <span>msg/batch</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🚢 Physical Layer (Simulated IoT Sensors)</h2>
+            <p>Real-time sensor data generation from 6 quay cranes</p>
+        </section>
+
+        <!-- Physical Layer -->
+        <div class="physical-layer fade-in">
+            <div class="layer-header">
+                <div class="layer-title">🏗️ QUAY CRANE FLEET</div>
+                <div class="layer-subtitle">Port Terminal Equipment</div>
+            </div>
+
+            <!-- Cranes Grid -->
+            <div class="cranes-section">
+                <div class="cranes-header">6 QUAY CRANES</div>
+                <div class="cranes-grid">
+                    <div class="crane-card" data-crane="QC_01">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_01</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>65,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>8 years</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="crane-card" data-crane="QC_02">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_02</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>65,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>5 years</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="crane-card" data-crane="QC_03">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_03</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>70,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>3 years</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="crane-card" data-crane="QC_04">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_04</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>70,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>2 years</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="crane-card" data-crane="QC_05">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_05</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>65,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>10 years</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="crane-card" data-crane="QC_06">
+                        <div class="crane-icon">🏗️</div>
+                        <div class="crane-id">QC_06</div>
+                        <div class="crane-specs">
+                            <div class="crane-spec">Max: <span>80,000 kg</span></div>
+                            <div class="crane-spec">Age: <span>1 year</span></div>
+                        </div>
+                        <div class="crane-status">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Lines -->
+            <div class="crane-connections">
+                <div class="connection-hub">
+                    <div class="connection-lines-top">
+                        <div class="conn-line"></div>
+                        <div class="conn-line"></div>
+                        <div class="conn-line"></div>
+                    </div>
+                    <div class="conn-center"></div>
+                    <div class="conn-arrow"></div>
+                </div>
+            </div>
+
+            <!-- Sensor Data Section -->
+            <div class="sensors-section">
+                <div class="sensors-header">
+                    <span>🔌</span>
+                    <span>IoT SENSOR DATA</span>
+                </div>
+                <div class="sensors-grid">
+                    <div class="sensor-card" data-sensor="temp">
+                        <div class="sensor-name">Motor Temp (°C)</div>
+                        <div class="sensor-range">45°C - 95°C</div>
+                        <div class="sensor-value" id="temp-value">67°C</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="pressure">
+                        <div class="sensor-name">Hydraulic (bar)</div>
+                        <div class="sensor-range">180 - 350 bar</div>
+                        <div class="sensor-value" id="pressure-value">265 bar</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="load">
+                        <div class="sensor-name">Load Weight (kg)</div>
+                        <div class="sensor-range">0 - 80,000 kg</div>
+                        <div class="sensor-value" id="load-value">42,500 kg</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="power">
+                        <div class="sensor-name">Power (kW)</div>
+                        <div class="sensor-range">200 - 800 kW</div>
+                        <div class="sensor-value" id="power-value">485 kW</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="vibration">
+                        <div class="sensor-name">Vibration (mm/s)</div>
+                        <div class="sensor-range">0 - 10 mm/s</div>
+                        <div class="sensor-value" id="vib-value">3.2 mm/s</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="wind">
+                        <div class="sensor-name">Wind Speed (m/s)</div>
+                        <div class="sensor-range">0 - 25 m/s</div>
+                        <div class="sensor-value" id="wind-value">8.5 m/s</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="health">
+                        <div class="sensor-name">Health Score</div>
+                        <div class="sensor-range">0 - 100</div>
+                        <div class="sensor-value" id="health-value">87</div>
+                    </div>
+
+                    <div class="sensor-card" data-sensor="spreader">
+                        <div class="sensor-name">Spreader Pos</div>
+                        <div class="sensor-range">X, Y, Z</div>
+                        <div class="sensor-value" id="spreader-value">12.5, 8.3, 22.1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Python Producer Section -->
+        <div class="producer-section fade-in">
+            <div class="producer-header">
+                <span class="producer-icon">🐍</span>
+                <div>
+                    <div class="producer-title">PYTHON PRODUCER APPLICATION</div>
+                    <div class="producer-subtitle">Host Machine - Data Generator</div>
+                </div>
+            </div>
+
+            <div class="files-section">
+                <div class="files-header">
+                    <span class="file-badge">main.py</span>
+                    <span style="color: var(--text-muted);">+</span>
+                    <span class="file-badge">QuayCraneSensorSimulator.py</span>
+                </div>
+
+                <div class="processes-section">
+                    <div class="processes-header">12 PARALLEL PRODUCER PROCESSES</div>
+                    <div class="processes-grid">
+                        <div class="process-badge" data-process="1">P1</div>
+                        <div class="process-badge" data-process="2">P2</div>
+                        <div class="process-badge" data-process="3">P3</div>
+                        <div class="process-badge" data-process="4">P4</div>
+                        <div class="process-badge" data-process="5">P5</div>
+                        <div class="process-badge" data-process="6">P6</div>
+                        <div class="process-badge" data-process="7">P7</div>
+                        <div class="process-badge" data-process="8">P8</div>
+                        <div class="process-badge" data-process="9">P9</div>
+                        <div class="process-badge" data-process="10">P10</div>
+                        <div class="process-badge" data-process="11">P11</div>
+                        <div class="process-badge" data-process="12">P12</div>
+                    </div>
+                    <div class="batch-info">
+                        <span>50</span> messages/batch × <span>6</span> cranes = <span>300</span> msg/batch
+                    </div>
+                </div>
+
+                <div class="kafka-connection">
+                    <div class="kafka-label">Producer Library</div>
+                    <div class="kafka-library">confluent-kafka-python (librdkafka)</div>
+                    <div class="kafka-arrow"></div>
+                    <div class="bootstrap-servers">
+                        <div class="bootstrap-title">Bootstrap Servers</div>
+                        <div class="bootstrap-list">
+                            <div class="bootstrap-item">localhost:29092</div>
+                            <div class="bootstrap-item">localhost:39092</div>
+                            <div class="bootstrap-item">localhost:49092</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value teal">6</div>
+                <div class="stat-label">Quay Cranes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value lime">8</div>
+                <div class="stat-label">Sensor Types</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value blue">12</div>
+                <div class="stat-label">Producers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value yellow">300</div>
+                <div class="stat-label">Msg/Batch</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value orange">3</div>
+                <div class="stat-label">Brokers</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Simulate live sensor values
+        function updateSensorValues() {
+            // Temperature
+            const temp = (45 + Math.random() * 50).toFixed(1);
+            document.getElementById('temp-value').textContent = temp + '°C';
+            
+            // Pressure
+            const pressure = (180 + Math.random() * 170).toFixed(0);
+            document.getElementById('pressure-value').textContent = pressure + ' bar';
+            
+            // Load
+            const load = (Math.random() * 80000).toFixed(0);
+            document.getElementById('load-value').textContent = Number(load).toLocaleString() + ' kg';
+            
+            // Power
+            const power = (200 + Math.random() * 600).toFixed(0);
+            document.getElementById('power-value').textContent = power + ' kW';
+            
+            // Vibration
+            const vib = (Math.random() * 10).toFixed(1);
+            document.getElementById('vib-value').textContent = vib + ' mm/s';
+            
+            // Wind
+            const wind = (Math.random() * 25).toFixed(1);
+            document.getElementById('wind-value').textContent = wind + ' m/s';
+            
+            // Health
+            const health = (70 + Math.random() * 30).toFixed(0);
+            document.getElementById('health-value').textContent = health;
+            
+            // Spreader
+            const x = (Math.random() * 20).toFixed(1);
+            const y = (Math.random() * 15).toFixed(1);
+            const z = (Math.random() * 30).toFixed(1);
+            document.getElementById('spreader-value').textContent = `${x}, ${y}, ${z}`;
+        }
+
+        // Update sensor values every 2 seconds
+        setInterval(updateSensorValues, 2000);
+
+        // Simulate crane activity
+        function simulateCraneActivity() {
+            const cranes = document.querySelectorAll('.crane-card');
+            const randomCrane = cranes[Math.floor(Math.random() * cranes.length)];
+            
+            randomCrane.style.boxShadow = '0 0 30px rgba(20, 184, 166, 0.4)';
+            randomCrane.style.borderColor = 'var(--sensor-lime)';
+            
+            setTimeout(() => {
+                randomCrane.style.boxShadow = '';
+                randomCrane.style.borderColor = 'var(--border-color)';
+            }, 800);
+        }
+
+        setInterval(simulateCraneActivity, 1500);
+
+        // Simulate producer process activity
+        function simulateProducerActivity() {
+            const processes = document.querySelectorAll('.process-badge');
+            processes.forEach(p => p.classList.remove('active'));
+            
+            // Activate random processes
+            const activeCount = 3 + Math.floor(Math.random() * 4);
+            const indices = [];
+            while (indices.length < activeCount) {
+                const idx = Math.floor(Math.random() * processes.length);
+                if (!indices.includes(idx)) indices.push(idx);
+            }
+            
+            indices.forEach(idx => {
+                processes[idx].classList.add('active');
+            });
+        }
+
+        setInterval(simulateProducerActivity, 1000);
+
+        // Click to highlight crane
+        document.querySelectorAll('.crane-card').forEach(card => {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => {
+                const craneId = card.getAttribute('data-crane');
+                
+                // Visual feedback
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+                
+                // Copy crane ID
+                navigator.clipboard.writeText(craneId);
+                
+                const idEl = card.querySelector('.crane-id');
+                idEl.style.color = 'var(--accent-green)';
+                setTimeout(() => {
+                    idEl.style.color = '';
+                }, 500);
+            });
+        });
+
+        // Sensor card click effect
+        document.querySelectorAll('.sensor-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                card.style.borderColor = 'var(--accent-green)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                    card.style.borderColor = '';
+                }, 200);
+            });
+        });
+
+        // Animate message rate
+        function animateMessageRate() {
+            const rateEl = document.getElementById('msg-rate');
+            const baseRate = 300;
+            const variance = Math.floor(Math.random() * 50) - 25;
+            rateEl.textContent = baseRate + variance;
+        }
+
+        setInterval(animateMessageRate, 3000);
+
+        // Bootstrap server click to copy
+        document.querySelectorAll('.bootstrap-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                navigator.clipboard.writeText(item.textContent);
+                item.style.color = 'var(--accent-green)';
+                setTimeout(() => {
+                    item.style.color = '';
+                }, 500);
+            });
+        });
+
+        // Highlight sensor on value change
+        function highlightSensorChange() {
+            const sensors = document.querySelectorAll('.sensor-card');
+            const randomSensor = sensors[Math.floor(Math.random() * sensors.length)];
+            
+            const value = randomSensor.querySelector('.sensor-value');
+            value.style.transform = 'scale(1.1)';
+            value.style.transition = 'transform 0.2s ease';
+            
+            setTimeout(() => {
+                value.style.transform = '';
+            }, 200);
+        }
+
+        setInterval(highlightSensorChange, 500);
+    </script>
+</body>
+</html>

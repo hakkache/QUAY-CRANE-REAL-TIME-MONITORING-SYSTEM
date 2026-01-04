@@ -1,0 +1,26 @@
+{
+  "attributes": {
+    "title": "Quay Crane Operations Dashboard",
+    "description": "Real-time monitoring of quay crane sensor data, alerts, and anomalies",
+    "panelsJSON": "[{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":0,\"w\":12,\"h\":8,\"i\":\"1\"},\"panelIndex\":\"1\",\"embeddableConfig\":{},\"panelRefName\":\"panel_1\"},{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":12,\"y\":0,\"w\":12,\"h\":8,\"i\":\"2\"},\"panelIndex\":\"2\",\"embeddableConfig\":{},\"panelRefName\":\"panel_2\"},{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":0,\"w\":12,\"h\":8,\"i\":\"3\"},\"panelIndex\":\"3\",\"embeddableConfig\":{},\"panelRefName\":\"panel_3\"},{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":36,\"y\":0,\"w\":12,\"h\":8,\"i\":\"4\"},\"panelIndex\":\"4\",\"embeddableConfig\":{},\"panelRefName\":\"panel_4\"},{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":8,\"w\":24,\"h\":10,\"i\":\"5\"},\"panelIndex\":\"5\",\"embeddableConfig\":{},\"panelRefName\":\"panel_5\"},{\"version\":\"8.11.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":8,\"w\":24,\"h\":10,\"i\":\"6\"},\"panelIndex\":\"6\",\"embeddableConfig\":{},\"panelRefName\":\"panel_6\"}]",
+    "optionsJSON": "{\"useMargins\":true,\"syncColors\":false,\"syncCursor\":true,\"syncTooltips\":false,\"hidePanelTitles\":false}",
+    "timeRestore": true,
+    "timeTo": "now",
+    "timeFrom": "now-1h",
+    "refreshInterval": {
+      "pause": false,
+      "value": 10000
+    },
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": [
+    {"name":"panel_1","type":"visualization","id":"b0a11270-e8eb-11f0-9f4e-83f41a7665ab"},
+    {"name":"panel_2","type":"visualization","id":"c13db250-e8eb-11f0-9f4e-83f41a7665ab"},
+    {"name":"panel_3","type":"visualization","id":"aa8b7470-e8eb-11f0-9f4e-83f41a7665ab"},
+    {"name":"panel_4","type":"visualization","id":"c930c2e0-e8eb-11f0-9f4e-83f41a7665ab"},
+    {"name":"panel_5","type":"visualization","id":"955416c0-e8eb-11f0-9f4e-83f41a7665ab"},
+    {"name":"panel_6","type":"visualization","id":"c1c35d10-e8eb-11f0-9f4e-83f41a7665ab"}
+  ]
+}

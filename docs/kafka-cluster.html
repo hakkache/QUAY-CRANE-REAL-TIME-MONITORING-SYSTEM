@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Cluster - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --kafka-orange: #ff6b35;
+            --kafka-dark: #231f20;
+            --kafka-light: #ff9e64;
+            --controller-purple: #a855f7;
+            --broker-blue: #3b82f6;
+            --schema-teal: #14b8a6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(255, 107, 53, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 53, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--kafka-orange), var(--kafka-light));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--kafka-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .cluster-stats {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .cluster-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .cluster-stat .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .cluster-stat .dot.orange { background: var(--kafka-orange); }
+        .cluster-stat .dot.purple { background: var(--controller-purple); }
+        .cluster-stat .dot.blue { background: var(--broker-blue); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .cluster-stat .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .cluster-stat .value.orange { color: var(--kafka-orange); }
+        .cluster-stat .value.purple { color: var(--controller-purple); }
+        .cluster-stat .value.blue { color: var(--broker-blue); }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--kafka-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Main Cluster Container */
+        .cluster-container {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .cluster-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--kafka-orange), var(--controller-purple), var(--broker-blue));
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* Controller Section */
+        .controller-section {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--controller-purple);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-icon {
+            font-size: 1.25rem;
+        }
+
+        .section-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .section-name.controller { color: var(--controller-purple); }
+        .section-name.broker { color: var(--broker-blue); }
+        .section-name.schema { color: var(--schema-teal); }
+
+        .section-badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .section-badge.controller {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--controller-purple);
+        }
+
+        .section-badge.broker {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--broker-blue);
+        }
+
+        /* Node Grid */
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .node-card {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .node-card.controller::before { background: var(--controller-purple); }
+        .node-card.broker::before { background: var(--broker-blue); }
+
+        .node-card.controller:hover {
+            border-color: var(--controller-purple);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25);
+        }
+
+        .node-card.broker:hover {
+            border-color: var(--broker-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+        }
+
+        .node-header {
+            text-align: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .node-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .node-name.controller { color: var(--controller-purple); }
+        .node-name.broker { color: var(--broker-blue); }
+
+        .node-image {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .node-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .node-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+        }
+
+        .detail-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .detail-value.controller { color: var(--controller-purple); }
+        .detail-value.broker { color: var(--broker-blue); }
+
+        /* Status Indicator */
+        .node-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.controller { background: var(--controller-purple); }
+        .status-dot.broker { background: var(--broker-blue); }
+        .status-dot.leader { background: var(--accent-green); }
+
+        .status-text {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-text.controller { color: var(--controller-purple); }
+        .status-text.broker { color: var(--broker-blue); }
+        .status-text.leader { color: var(--accent-green); }
+
+        /* Connection Lines */
+        .connection-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 0;
+        }
+
+        .connection-lines {
+            display: flex;
+            gap: 6rem;
+        }
+
+        .conn-line {
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(180deg, var(--controller-purple), var(--kafka-orange));
+        }
+
+        .conn-hub {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .conn-merge {
+            width: 200px;
+            height: 2px;
+            background: var(--controller-purple);
+        }
+
+        .conn-center {
+            width: 2px;
+            height: 15px;
+            background: var(--controller-purple);
+        }
+
+        /* Raft Protocol Box */
+        .raft-box {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(255, 107, 53, 0.1));
+            border: 1px solid var(--controller-purple);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+
+        .raft-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--controller-purple);
+            margin-bottom: 0.25rem;
+        }
+
+        .raft-features {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .raft-feature {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .raft-feature::before {
+            content: '•';
+            color: var(--kafka-orange);
+        }
+
+        /* Arrow Down */
+        .arrow-down {
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--controller-purple), var(--broker-blue));
+            position: relative;
+        }
+
+        .arrow-down::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--broker-blue);
+        }
+
+        /* Broker Section */
+        .broker-section {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--broker-blue);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Port Badges */
+        .port-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .port-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+
+        .port-badge.internal {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .port-badge.external {
+            color: var(--kafka-orange);
+            border-color: var(--kafka-orange);
+        }
+
+        /* Schema Registry Section */
+        .schema-section {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--schema-teal);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 0 30px rgba(20, 184, 166, 0.1);
+        }
+
+        .schema-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .schema-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .schema-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--schema-teal);
+        }
+
+        .schema-image {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .schema-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .schema-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .schema-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .schema-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--schema-teal);
+        }
+
+        .schema-formats {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .formats-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 0.375rem;
+        }
+
+        .format-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .format-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(20, 184, 166, 0.15);
+            color: var(--schema-teal);
+            border: 1px solid var(--schema-teal);
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.orange { color: var(--kafka-orange); }
+        .stat-value.purple { color: var(--controller-purple); }
+        .stat-value.blue { color: var(--broker-blue); }
+        .stat-value.teal { color: var(--schema-teal); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .nodes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .connection-lines {
+                gap: 3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .cluster-stats {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .nodes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connection-lines {
+                gap: 1.5rem;
+            }
+
+            .schema-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Leader indicator */
+        .leader-crown {
+            position: absolute;
+            top: -12px;
+            right: 10px;
+            font-size: 1rem;
+            animation: crownBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Network badge */
+        .network-badge {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .network-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--kafka-orange);
+            background: rgba(255, 107, 53, 0.1);
+            padding: 0.375rem 1rem;
+            border-radius: 20px;
+            border: 1px solid var(--kafka-orange);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📨</div>
+                <div class="logo-text">
+                    <h1>Kafka Cluster</h1>
+                    <p>KRaft Mode - Event Streaming Platform</p>
+                </div>
+            </div>
+            <div class="cluster-stats">
+                <div class="cluster-stat">
+                    <span class="dot orange"></span>
+                    <span class="value orange">7</span>
+                    <span>Containers</span>
+                </div>
+                <div class="cluster-stat">
+                    <span class="dot purple"></span>
+                    <span class="value purple">3</span>
+                    <span>Controllers</span>
+                </div>
+                <div class="cluster-stat">
+                    <span class="dot blue"></span>
+                    <span class="value blue">3</span>
+                    <span>Brokers</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>📨 KAFKA CLUSTER (7 Containers)</h2>
+            <p>Distributed event streaming with KRaft consensus</p>
+        </section>
+
+        <div class="cluster-container fade-in">
+            <div class="network-badge">
+                <span class="network-name">🐳 hakkachenetwork (bridge)</span>
+            </div>
+
+            <!-- Controller Section -->
+            <div class="controller-section">
+                <div class="section-header">
+                    <span class="section-icon">🎛️</span>
+                    <span class="section-name controller">KRAFT CONTROLLER QUORUM</span>
+                    <span class="section-badge controller">Raft Consensus</span>
+                </div>
+
+                <div class="nodes-grid">
+                    <div class="node-card controller" data-node="controller-1">
+                        <span class="leader-crown" id="leader-1" style="display: none;">👑</span>
+                        <div class="node-header">
+                            <div class="node-name controller">kafka-controller-1</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value controller">1</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">controller</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Port:</span>
+                                <span class="detail-value">9093 (internal)</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">controller_1</span>
+                            </div>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot controller"></div>
+                            <span class="status-text controller">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="node-card controller" data-node="controller-2">
+                        <span class="leader-crown" id="leader-2" style="display: none;">👑</span>
+                        <div class="node-header">
+                            <div class="node-name controller">kafka-controller-2</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value controller">2</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">controller</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Port:</span>
+                                <span class="detail-value">9093 (internal)</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">controller_2</span>
+                            </div>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot controller"></div>
+                            <span class="status-text controller">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="node-card controller" data-node="controller-3">
+                        <span class="leader-crown" id="leader-3" style="display: none;">👑</span>
+                        <div class="node-header">
+                            <div class="node-name controller">kafka-controller-3</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value controller">3</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">controller</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Port:</span>
+                                <span class="detail-value">9093 (internal)</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">controller_3</span>
+                            </div>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot controller"></div>
+                            <span class="status-text controller">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Section -->
+            <div class="connection-section">
+                <div class="connection-lines">
+                    <div class="conn-line"></div>
+                    <div class="conn-line"></div>
+                    <div class="conn-line"></div>
+                </div>
+                <div class="conn-hub">
+                    <div class="conn-merge"></div>
+                    <div class="conn-center"></div>
+                </div>
+
+                <div class="raft-box">
+                    <div class="raft-title">Raft Protocol</div>
+                    <div class="raft-features">
+                        <span class="raft-feature">Leader Election</span>
+                        <span class="raft-feature">Metadata Mgmt</span>
+                        <span class="raft-feature">Log Replication</span>
+                    </div>
+                </div>
+
+                <div class="arrow-down"></div>
+            </div>
+
+            <!-- Broker Section -->
+            <div class="broker-section">
+                <div class="section-header">
+                    <span class="section-icon">📦</span>
+                    <span class="section-name broker">BROKER CLUSTER</span>
+                    <span class="section-badge broker">Data Plane</span>
+                </div>
+
+                <div class="nodes-grid">
+                    <div class="node-card broker" data-node="broker-1">
+                        <div class="node-header">
+                            <div class="node-name broker">kafka-broker-1</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value broker">4</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">broker</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">broker_1</span>
+                            </div>
+                        </div>
+                        <div class="port-badges">
+                            <span class="port-badge internal">:19092 internal</span>
+                            <span class="port-badge external">:29092 external</span>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot broker"></div>
+                            <span class="status-text broker">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="node-card broker" data-node="broker-2">
+                        <div class="node-header">
+                            <div class="node-name broker">kafka-broker-2</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value broker">5</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">broker</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">broker_2</span>
+                            </div>
+                        </div>
+                        <div class="port-badges">
+                            <span class="port-badge internal">:19092 internal</span>
+                            <span class="port-badge external">:39092 external</span>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot broker"></div>
+                            <span class="status-text broker">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="node-card broker" data-node="broker-3">
+                        <div class="node-header">
+                            <div class="node-name broker">kafka-broker-3</div>
+                            <div class="node-image">cp-kafka:7.5.1</div>
+                        </div>
+                        <div class="node-details">
+                            <div class="node-detail">
+                                <span class="detail-label">Node ID:</span>
+                                <span class="detail-value broker">6</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Role:</span>
+                                <span class="detail-value">broker</span>
+                            </div>
+                            <div class="node-detail">
+                                <span class="detail-label">Volume:</span>
+                                <span class="detail-value">broker_3</span>
+                            </div>
+                        </div>
+                        <div class="port-badges">
+                            <span class="port-badge internal">:19092 internal</span>
+                            <span class="port-badge external">:49092 external</span>
+                        </div>
+                        <div class="node-status">
+                            <div class="status-dot broker"></div>
+                            <span class="status-text broker">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schema Registry Section -->
+            <div class="schema-section">
+                <div class="section-header">
+                    <span class="section-icon">📋</span>
+                    <span class="section-name schema">SCHEMA REGISTRY</span>
+                </div>
+
+                <div class="schema-card">
+                    <div class="schema-header">
+                        <div class="schema-name">schema-registry</div>
+                        <div class="schema-image">cp-schema-registry:7.5.1</div>
+                    </div>
+                    <div class="schema-grid">
+                        <div class="schema-item">
+                            <span class="schema-label">Port:</span>
+                            <span class="schema-value">18081 → 8081</span>
+                        </div>
+                        <div class="schema-item">
+                            <span class="schema-label">Topic:</span>
+                            <span class="schema-value">_schemas</span>
+                        </div>
+                        <div class="schema-item">
+                            <span class="schema-label">Bootstrap:</span>
+                            <span class="schema-value">broker-1, broker-2, broker-3</span>
+                        </div>
+                        <div class="schema-item">
+                            <span class="schema-label">Compatibility:</span>
+                            <span class="schema-value">BACKWARD</span>
+                        </div>
+                    </div>
+                    <div class="schema-formats">
+                        <div class="formats-label">Schema Formats:</div>
+                        <div class="format-badges">
+                            <span class="format-badge">Avro</span>
+                            <span class="format-badge">JSON</span>
+                            <span class="format-badge">Protobuf</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value orange">7</div>
+                <div class="stat-label">Containers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value purple">3</div>
+                <div class="stat-label">Controllers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value blue">3</div>
+                <div class="stat-label">Brokers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value teal">1</div>
+                <div class="stat-label">Schema Registry</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value cyan">6</div>
+                <div class="stat-label">Volumes</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Simulate leader election
+        let currentLeader = 1;
+        function simulateLeaderElection() {
+            // Hide all crowns
+            document.querySelectorAll('.leader-crown').forEach(crown => {
+                crown.style.display = 'none';
+            });
+
+            // Show crown on current leader
+            const leaderCrown = document.getElementById(`leader-${currentLeader}`);
+            if (leaderCrown) {
+                leaderCrown.style.display = 'block';
+            }
+
+            // Update status text for leader
+            document.querySelectorAll('.node-card.controller').forEach((card, index) => {
+                const statusText = card.querySelector('.status-text');
+                const statusDot = card.querySelector('.status-dot');
+                
+                if (index + 1 === currentLeader) {
+                    statusText.textContent = 'Leader';
+                    statusText.className = 'status-text leader';
+                    statusDot.className = 'status-dot leader';
+                } else {
+                    statusText.textContent = 'Follower';
+                    statusText.className = 'status-text controller';
+                    statusDot.className = 'status-dot controller';
+                }
+            });
+        }
+
+        // Initial leader
+        simulateLeaderElection();
+
+        // Simulate leader change every 15 seconds
+        setInterval(() => {
+            currentLeader = (currentLeader % 3) + 1;
+            simulateLeaderElection();
+        }, 15000);
+
+        // Simulate broker activity
+        function simulateBrokerActivity() {
+            const brokers = document.querySelectorAll('.node-card.broker');
+            const randomBroker = brokers[Math.floor(Math.random() * brokers.length)];
+            
+            randomBroker.style.boxShadow = '0 0 25px rgba(59, 130, 246, 0.4)';
+            randomBroker.style.borderColor = 'var(--broker-blue)';
+            
+            setTimeout(() => {
+                randomBroker.style.boxShadow = '';
+                randomBroker.style.borderColor = 'var(--border-color)';
+            }, 800);
+        }
+
+        setInterval(simulateBrokerActivity, 2000);
+
+        // Simulate controller activity
+        function simulateControllerActivity() {
+            const controllers = document.querySelectorAll('.node-card.controller');
+            const randomController = controllers[Math.floor(Math.random() * controllers.length)];
+            
+            randomController.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.4)';
+            
+            setTimeout(() => {
+                randomController.style.boxShadow = '';
+            }, 600);
+        }
+
+        setInterval(simulateControllerActivity, 3000);
+
+        // Node card click to copy name
+        document.querySelectorAll('.node-card').forEach(card => {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => {
+                const nodeName = card.querySelector('.node-name').textContent;
+                navigator.clipboard.writeText(nodeName);
+                
+                // Visual feedback
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+                
+                const nameEl = card.querySelector('.node-name');
+                nameEl.style.color = 'var(--accent-green)';
+                setTimeout(() => {
+                    nameEl.style.color = '';
+                }, 500);
+            });
+        });
+
+        // Port badge click to copy
+        document.querySelectorAll('.port-badge').forEach(badge => {
+            badge.style.cursor = 'pointer';
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const port = badge.textContent.split(' ')[0];
+                navigator.clipboard.writeText(port);
+                
+                badge.style.background = 'rgba(16, 185, 129, 0.3)';
+                badge.style.borderColor = 'var(--accent-green)';
+                badge.style.color = 'var(--accent-green)';
+                
+                setTimeout(() => {
+                    badge.style.background = '';
+                    badge.style.borderColor = '';
+                    badge.style.color = '';
+                }, 500);
+            });
+        });
+
+        // Format badge hover effect
+        document.querySelectorAll('.format-badge').forEach(badge => {
+            badge.addEventListener('mouseenter', () => {
+                badge.style.transform = 'scale(1.1)';
+                badge.style.transition = 'transform 0.2s ease';
+            });
+            badge.addEventListener('mouseleave', () => {
+                badge.style.transform = '';
+            });
+        });
+
+        // Connection line animation
+        function animateConnections() {
+            const lines = document.querySelectorAll('.conn-line');
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.style.boxShadow = '0 0 10px var(--controller-purple)';
+                    setTimeout(() => {
+                        line.style.boxShadow = '';
+                    }, 400);
+                }, index * 150);
+            });
+        }
+
+        setInterval(animateConnections, 4000);
+
+        // Raft box pulse
+        function pulseRaftBox() {
+            const raftBox = document.querySelector('.raft-box');
+            raftBox.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.4)';
+            setTimeout(() => {
+                raftBox.style.boxShadow = '';
+            }, 500);
+        }
+
+        setInterval(pulseRaftBox, 5000);
+
+        // Schema registry activity
+        function simulateSchemaActivity() {
+            const schemaCard = document.querySelector('.schema-card');
+            schemaCard.style.borderColor = 'var(--schema-teal)';
+            schemaCard.style.boxShadow = '0 0 20px rgba(20, 184, 166, 0.3)';
+            
+            setTimeout(() => {
+                schemaCard.style.borderColor = 'var(--border-color)';
+                schemaCard.style.boxShadow = '';
+            }, 800);
+        }
+
+        setInterval(simulateSchemaActivity, 6000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+﻿global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Container metrics via cAdvisor with relabeling
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metric_relabel_configs:
+      # kafka-broker-2
+      - source_labels: [id]
+        regex: '/docker/a8f724c0a2e300f5b0e1e4fb5ceb0f912e50887a74ad2bb12aba0d5b5495bbf3'
+        target_label: name
+        replacement: 'kafka-broker-2'
+      # kafka-broker-3
+      - source_labels: [id]
+        regex: '/docker/e103ff4b2d48dd93acf9878c19bb819bd7e492a0bc1ed6d930e6e7a22312caaf'
+        target_label: name
+        replacement: 'kafka-broker-3'
+      # kafka-broker-1
+      - source_labels: [id]
+        regex: '/docker/10e9cb3b0bb3eb8a27157f8eb617fdf832160011caa522b4b5b4b3d2f0e06a28'
+        target_label: name
+        replacement: 'kafka-broker-1'
+      # kafka-controller-1
+      - source_labels: [id]
+        regex: '/docker/6223f12e2e7fe3128c97aa91b792ff14662e5d14408aa9b41433435608d49d1c'
+        target_label: name
+        replacement: 'kafka-controller-1'
+      # kafka-controller-3
+      - source_labels: [id]
+        regex: '/docker/3439b852d7cb9c748a8d11b8189fe2189d74b8313dee62946075f04816fbef0e'
+        target_label: name
+        replacement: 'kafka-controller-3'
+      # kafka-controller-2
+      - source_labels: [id]
+        regex: '/docker/4dfc96e6411b5b5a7584f7804a4c16f398225fee71e54ebb4f3531d685c4a5c4'
+        target_label: name
+        replacement: 'kafka-controller-2'
+      # spark-worker-1
+      - source_labels: [id]
+        regex: '/docker/5e07d3fcc09303bcefe7fa002587d1f3bc7b5bdc3d65089d5971bd2db72650ea'
+        target_label: name
+        replacement: 'spark-worker-1'
+      # spark-worker-2
+      - source_labels: [id]
+        regex: '/docker/538cdd9041244cf1b61c77ff03a5ca516689e4d778061304257b738fbba262b0'
+        target_label: name
+        replacement: 'spark-worker-2'
+      # spark-worker-3
+      - source_labels: [id]
+        regex: '/docker/eba117ed3b38932645007e3aea7c2d38ac7b65c6d943d272dc1086b15ef045d0'
+        target_label: name
+        replacement: 'spark-worker-3'
+      # spark-master-1
+      - source_labels: [id]
+        regex: '/docker/6fe27a5a959f022ff8438f99543952874d299792cc10001c5bd84dd1bc08f7fc'
+        target_label: name
+        replacement: 'spark-master-1'
+
+  # Kafka Exporter - topic/consumer group level metrics
+  - job_name: 'kafka-exporter'
+    static_configs:
+      - targets: ['kafka-exporter:9308']

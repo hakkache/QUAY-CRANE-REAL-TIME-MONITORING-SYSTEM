@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "title": "📦 Load Weight Trend",
+    "visState": "{\"title\":\"Load Weight Trend\",\"type\":\"metrics\",\"aggs\":[],\"params\":{\"id\":\"load-001\",\"type\":\"timeseries\",\"series\":[{\"id\":\"series-avg\",\"color\":\"#27AE60\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"metric-avg\",\"type\":\"avg\",\"field\":\"load_weight_kg\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":2,\"point_size\":1,\"fill\":0.3,\"stacked\":\"none\",\"label\":\"Avg Load (kg)\"}],\"time_field\":\"@timestamp\",\"index_pattern\":\"crane-sensors-*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"tooltip_mode\":\"show_all\",\"default_index_pattern\":\"crane-sensors-*\",\"default_timefield\":\"@timestamp\",\"isModelInvalid\":false}}",
+    "uiStateJSON": "{}",
+    "description": "",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+    }
+  },
+  "references": []
+}

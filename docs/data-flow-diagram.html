@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Flow Sequence Diagram - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
+            --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+            --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header */
+        .header {
+            padding: 2rem 3rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-blue);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-blue);
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem 3rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Diagram container */
+        .diagram-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diagram-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
+        }
+
+        /* SVG Diagram */
+        .diagram-svg {
+            width: 100%;
+            height: 700px;
+            display: block;
+        }
+
+        /* Component nodes */
+        .component-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .component-node:hover {
+            transform: scale(1.05);
+        }
+
+        .component-node:hover .node-bg {
+            filter: brightness(1.2);
+        }
+
+        .node-bg {
+            transition: all 0.3s ease;
+        }
+
+        .node-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            fill: var(--text-primary);
+        }
+
+        .node-sublabel {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            fill: var(--text-secondary);
+        }
+
+        /* Flow arrows */
+        .flow-arrow {
+            stroke-dasharray: 8 4;
+            animation: flowAnimation 1.5s linear infinite;
+        }
+
+        @keyframes flowAnimation {
+            to {
+                stroke-dashoffset: -24;
+            }
+        }
+
+        .flow-arrow.paused {
+            animation-play-state: paused;
+        }
+
+        /* Step labels */
+        .step-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Monitoring plane */
+        .monitoring-plane {
+            fill: rgba(16, 185, 129, 0.05);
+            stroke: var(--accent-green);
+            stroke-width: 1;
+            stroke-dasharray: 5 3;
+        }
+
+        /* Legend */
+        .legend-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            border-color: var(--accent-blue);
+            transform: translateX(5px);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Step details panel */
+        .steps-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-5px);
+            box-shadow: var(--glow-blue);
+        }
+
+        .step-card:hover::before {
+            opacity: 1;
+        }
+
+        .step-card.active {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .step-card.active::before {
+            opacity: 1;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-green));
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .step-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .step-components {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .component-tag {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Monitoring section */
+        .monitoring-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .monitoring-section h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .monitoring-section h3 span {
+            font-size: 1.5rem;
+        }
+
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .monitoring-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .monitoring-item:hover {
+            border-color: var(--accent-green);
+            transform: translateX(5px);
+        }
+
+        .monitoring-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .monitoring-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .monitoring-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent-blue);
+            background: var(--accent-blue);
+            transform: scale(1.1);
+        }
+
+        .control-btn.active {
+            border-color: var(--accent-green);
+            background: var(--accent-green);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            max-width: 250px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+            }
+
+            .diagram-svg {
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .section-title h2 {
+                font-size: 1.5rem;
+            }
+
+            .diagram-svg {
+                height: 400px;
+            }
+
+            .steps-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🏗️</div>
+                <div class="logo-text">
+                    <h1>Quay Crane Monitoring</h1>
+                    <p>Real-Time Data Engineering Pipeline</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="resetAnimation()">
+                    <span>🔄</span> Reset
+                </button>
+                <button class="btn btn-primary" onclick="toggleAnimation()">
+                    <span id="playIcon">⏸️</span> <span id="playText">Pause</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🔄 Data Flow Sequence Diagram</h2>
+            <p>Interactive visualization of the complete data pipeline from IoT sensors to real-time dashboards</p>
+        </section>
+
+        <div class="diagram-container fade-in">
+            <svg class="diagram-svg" viewBox="0 0 1400 650" preserveAspectRatio="xMidYMid meet">
+                <!-- Definitions -->
+                <defs>
+                    <!-- Gradients -->
+                    <linearGradient id="pythonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3776ab"/>
+                        <stop offset="100%" style="stop-color:#ffd43b"/>
+                    </linearGradient>
+                    <linearGradient id="schemaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#8b5cf6"/>
+                        <stop offset="100%" style="stop-color:#a855f7"/>
+                    </linearGradient>
+                    <linearGradient id="kafkaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#231f20"/>
+                        <stop offset="100%" style="stop-color:#ff6b6b"/>
+                    </linearGradient>
+                    <linearGradient id="sparkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#e25a1c"/>
+                        <stop offset="100%" style="stop-color:#ff8c00"/>
+                    </linearGradient>
+                    <linearGradient id="logstashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#005571"/>
+                        <stop offset="100%" style="stop-color:#00bfb3"/>
+                    </linearGradient>
+                    <linearGradient id="elasticGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fed10a"/>
+                        <stop offset="100%" style="stop-color:#24bbb1"/>
+                    </linearGradient>
+                    <linearGradient id="kibanaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#e8478b"/>
+                        <stop offset="100%" style="stop-color:#f04e98"/>
+                    </linearGradient>
+                    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                        <stop offset="50%" style="stop-color:#8b5cf6"/>
+                        <stop offset="100%" style="stop-color:#06b6d4"/>
+                    </linearGradient>
+
+                    <!-- Arrow marker -->
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+                    </marker>
+                    <marker id="arrowheadGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+                    </marker>
+
+                    <!-- Glow filter -->
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <!-- Background grid lines -->
+                <g opacity="0.1">
+                    <line x1="100" y1="120" x2="100" y2="450" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="280" y1="120" x2="280" y2="450" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="460" y1="120" x2="460" y2="450" stroke="#ef4444" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="640" y1="120" x2="640" y2="450" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="820" y1="120" x2="820" y2="450" stroke="#00bfb3" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="1000" y1="120" x2="1000" y2="450" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="1180" y1="120" x2="1180" y2="450" stroke="#ec4899" stroke-width="1" stroke-dasharray="4"/>
+                </g>
+
+                <!-- Component Nodes -->
+                <!-- Python Producer -->
+                <g class="component-node" id="node-python" data-tooltip="Python Producer: Generates IoT sensor data from 6 quay cranes using 12 parallel processes">
+                    <rect class="node-bg" x="40" y="40" width="120" height="70" rx="12" fill="url(#pythonGrad)" filter="url(#glow)"/>
+                    <text x="100" y="70" text-anchor="middle" class="node-label" fill="white">🐍 Python</text>
+                    <text x="100" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">Producer</text>
+                </g>
+
+                <!-- Schema Registry -->
+                <g class="component-node" id="node-schema" data-tooltip="Schema Registry: Manages Avro/JSON schemas for data validation and evolution">
+                    <rect class="node-bg" x="220" y="40" width="120" height="70" rx="12" fill="url(#schemaGrad)" filter="url(#glow)"/>
+                    <text x="280" y="70" text-anchor="middle" class="node-label" fill="white">📋 Schema</text>
+                    <text x="280" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">Registry</text>
+                </g>
+
+                <!-- Kafka Cluster -->
+                <g class="component-node" id="node-kafka" data-tooltip="Kafka Cluster: 3 controllers + 3 brokers in KRaft mode, handles 10K+ msg/sec">
+                    <rect class="node-bg" x="400" y="40" width="120" height="70" rx="12" fill="#231f20" stroke="#ff6b6b" stroke-width="2" filter="url(#glow)"/>
+                    <text x="460" y="70" text-anchor="middle" class="node-label" fill="white">📦 Kafka</text>
+                    <text x="460" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">Cluster</text>
+                </g>
+
+                <!-- Spark Streaming -->
+                <g class="component-node" id="node-spark" data-tooltip="Spark Streaming: 1 master + 3 workers processing 6 streaming queries">
+                    <rect class="node-bg" x="580" y="40" width="120" height="70" rx="12" fill="url(#sparkGrad)" filter="url(#glow)"/>
+                    <text x="640" y="70" text-anchor="middle" class="node-label" fill="white">⚡ Spark</text>
+                    <text x="640" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">Streaming</text>
+                </g>
+
+                <!-- Logstash -->
+                <g class="component-node" id="node-logstash" data-tooltip="Logstash Pipeline: Consumes from 8 Kafka topics, transforms and indexes to ES">
+                    <rect class="node-bg" x="760" y="40" width="120" height="70" rx="12" fill="url(#logstashGrad)" filter="url(#glow)"/>
+                    <text x="820" y="70" text-anchor="middle" class="node-label" fill="white">🔧 Logstash</text>
+                    <text x="820" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">Pipeline</text>
+                </g>
+
+                <!-- Elasticsearch -->
+                <g class="component-node" id="node-elastic" data-tooltip="Elasticsearch: Stores ~55M documents/day across 7 time-series indices">
+                    <rect class="node-bg" x="940" y="40" width="120" height="70" rx="12" fill="url(#elasticGrad)" filter="url(#glow)"/>
+                    <text x="1000" y="70" text-anchor="middle" class="node-label" fill="#231f20">💾 Elastic</text>
+                    <text x="1000" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(0,0,0,0.7)">search</text>
+                </g>
+
+                <!-- Kibana -->
+                <g class="component-node" id="node-kibana" data-tooltip="Kibana UI: Real-time dashboard with 21 visualization panels, 30s auto-refresh">
+                    <rect class="node-bg" x="1120" y="40" width="120" height="70" rx="12" fill="url(#kibanaGrad)" filter="url(#glow)"/>
+                    <text x="1180" y="70" text-anchor="middle" class="node-label" fill="white">📈 Kibana</text>
+                    <text x="1180" y="90" text-anchor="middle" class="node-sublabel" fill="rgba(255,255,255,0.8)">UI</text>
+                </g>
+
+                <!-- Flow Arrows with Animations -->
+                <!-- Step 1: Register Schema -->
+                <g id="flow-1">
+                    <path class="flow-arrow" d="M160 75 L220 75" stroke="#3b82f6" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <path class="flow-arrow" d="M220 85 L160 85" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dashoffset="12"/>
+                    <circle cx="190" cy="65" r="14" fill="#1a1a25" stroke="#3b82f6" stroke-width="2"/>
+                    <text x="190" y="69" text-anchor="middle" class="step-badge" fill="#3b82f6">1</text>
+                </g>
+
+                <!-- Step 2: Produce Messages -->
+                <g id="flow-2">
+                    <path class="flow-arrow" d="M160 95 Q280 140 400 75" stroke="#3b82f6" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="280" cy="120" r="14" fill="#1a1a25" stroke="#3b82f6" stroke-width="2"/>
+                    <text x="280" y="124" text-anchor="middle" class="step-badge" fill="#3b82f6">2</text>
+                </g>
+
+                <!-- Step 3: Subscribe -->
+                <g id="flow-3">
+                    <path class="flow-arrow" d="M580 75 L520 75" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="550" cy="60" r="14" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="550" y="64" text-anchor="middle" class="step-badge" fill="#f59e0b">3</text>
+                </g>
+
+                <!-- Step 4: Stream Data -->
+                <g id="flow-4">
+                    <path class="flow-arrow" d="M520 85 L580 85" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="550" cy="100" r="14" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="550" y="104" text-anchor="middle" class="step-badge" fill="#f59e0b">4</text>
+                </g>
+
+                <!-- Step 5: Process (Internal Spark) -->
+                <g id="flow-5">
+                    <rect x="610" y="130" width="60" height="50" rx="8" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="640" y="150" text-anchor="middle" fill="#f59e0b" font-size="10">Process</text>
+                    <text x="640" y="165" text-anchor="middle" fill="#94a3b8" font-size="8">Aggregate</text>
+                    <circle cx="670" cy="125" r="14" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="670" y="129" text-anchor="middle" class="step-badge" fill="#f59e0b">5</text>
+                </g>
+
+                <!-- Step 6: Write Processed -->
+                <g id="flow-6">
+                    <path class="flow-arrow" d="M610 180 Q560 220 520 180 Q480 140 460 110" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="540" cy="200" r="14" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="540" y="204" text-anchor="middle" class="step-badge" fill="#f59e0b">6</text>
+                </g>
+
+                <!-- Step 7: Consume All Topics -->
+                <g id="flow-7">
+                    <path class="flow-arrow" d="M520 75 Q620 75 760 75" stroke="#00bfb3" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="640" cy="60" r="14" fill="#1a1a25" stroke="#00bfb3" stroke-width="2"/>
+                    <text x="640" y="64" text-anchor="middle" class="step-badge" fill="#00bfb3">7</text>
+                </g>
+
+                <!-- Step 8: Filter & Index -->
+                <g id="flow-8">
+                    <path class="flow-arrow" d="M880 75 L940 75" stroke="#fbbf24" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <circle cx="910" cy="60" r="14" fill="#1a1a25" stroke="#fbbf24" stroke-width="2"/>
+                    <text x="910" y="64" text-anchor="middle" class="step-badge" fill="#fbbf24">8</text>
+                </g>
+
+                <!-- Step 9: Query & Visualize -->
+                <g id="flow-9">
+                    <path class="flow-arrow" d="M1060 85 L1120 85" stroke="#ec4899" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                    <path class="flow-arrow" d="M1120 75 L1060 75" stroke="#ec4899" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dashoffset="12"/>
+                    <circle cx="1090" cy="60" r="14" fill="#1a1a25" stroke="#ec4899" stroke-width="2"/>
+                    <text x="1090" y="64" text-anchor="middle" class="step-badge" fill="#ec4899">9</text>
+                </g>
+
+                <!-- Monitoring Plane -->
+                <g id="monitoring-plane">
+                    <rect class="monitoring-plane" x="60" y="280" width="1220" height="180" rx="16"/>
+                    <text x="100" y="310" fill="#10b981" font-size="14" font-weight="600">📊 MONITORING PLANE</text>
+                    
+                    <!-- cAdvisor -->
+                    <g class="component-node" data-tooltip="cAdvisor: Container resource monitoring (CPU, Memory, Network, Disk)">
+                        <rect x="100" y="330" width="140" height="50" rx="8" fill="#1a1a25" stroke="#10b981" stroke-width="2"/>
+                        <text x="170" y="355" text-anchor="middle" fill="#10b981" font-size="11">📦 cAdvisor</text>
+                        <text x="170" y="370" text-anchor="middle" fill="#64748b" font-size="9">Container Metrics</text>
+                    </g>
+
+                    <!-- kafka-exporter -->
+                    <g class="component-node" data-tooltip="Kafka Exporter: Exports broker, topic, and consumer group metrics">
+                        <rect x="100" y="390" width="140" height="50" rx="8" fill="#1a1a25" stroke="#10b981" stroke-width="2"/>
+                        <text x="170" y="415" text-anchor="middle" fill="#10b981" font-size="11">📊 kafka-exporter</text>
+                        <text x="170" y="430" text-anchor="middle" fill="#64748b" font-size="9">Kafka Metrics</text>
+                    </g>
+
+                    <!-- Arrow to Prometheus -->
+                    <path class="flow-arrow" d="M240 380 L380 380" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrowheadGreen)"/>
+
+                    <!-- Prometheus -->
+                    <g class="component-node" data-tooltip="Prometheus: Time-series database for metrics storage and querying">
+                        <rect x="380" y="345" width="160" height="70" rx="12" fill="#1a1a25" stroke="#10b981" stroke-width="2"/>
+                        <text x="460" y="375" text-anchor="middle" fill="#e25a1c" font-size="12" font-weight="600">🔥 Prometheus</text>
+                        <text x="460" y="395" text-anchor="middle" fill="#64748b" font-size="10">Time Series DB</text>
+                    </g>
+
+                    <!-- Arrow to Grafana -->
+                    <path class="flow-arrow" d="M540 380 L620 380" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrowheadGreen)"/>
+
+                    <!-- Grafana -->
+                    <g class="component-node" data-tooltip="Grafana: Infrastructure dashboards for Kafka, containers, and ES metrics">
+                        <rect x="620" y="345" width="160" height="70" rx="12" fill="#1a1a25" stroke="#f59e0b" stroke-width="2"/>
+                        <text x="700" y="375" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="600">📊 Grafana</text>
+                        <text x="700" y="395" text-anchor="middle" fill="#64748b" font-size="10">Dashboards</text>
+                    </g>
+
+                    <!-- Elasticsearch metrics -->
+                    <g class="component-node" data-tooltip="Elasticsearch exports cluster health and performance metrics">
+                        <rect x="260" y="330" width="100" height="40" rx="6" fill="#1a1a25" stroke="#fbbf24" stroke-width="1"/>
+                        <text x="310" y="355" text-anchor="middle" fill="#fbbf24" font-size="10">ES Cluster</text>
+                    </g>
+                    <path d="M310 370 L310 380 L380 380" stroke="#10b981" stroke-width="1" fill="none" stroke-dasharray="4"/>
+
+                    <!-- Redpanda Console -->
+                    <g class="component-node" data-tooltip="Redpanda Console: Kafka UI for topic browsing and message viewing">
+                        <rect x="860" y="345" width="180" height="70" rx="12" fill="#1a1a25" stroke="#ef4444" stroke-width="2"/>
+                        <text x="950" y="370" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="600">🖥️ Redpanda Console</text>
+                        <text x="950" y="390" text-anchor="middle" fill="#64748b" font-size="10">Topic Browser</text>
+                        <text x="950" y="405" text-anchor="middle" fill="#64748b" font-size="10">Message Viewer</text>
+                    </g>
+
+                    <!-- Arrow from Kafka to Redpanda -->
+                    <path d="M460 110 L460 250 Q460 280 490 300 L860 350" stroke="#ef4444" stroke-width="1" fill="none" stroke-dasharray="4"/>
+                </g>
+
+                <!-- Data flow indicators -->
+                <g id="data-particles">
+                    <!-- Animated particles will be added via JavaScript -->
+                </g>
+            </svg>
+
+            <!-- Legend -->
+            <div class="legend-container">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #3776ab, #ffd43b);"></div>
+                    <span class="legend-text">Data Producer</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);"></div>
+                    <span class="legend-text">Schema Management</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span class="legend-text">Message Broker</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #e25a1c, #ff8c00);"></div>
+                    <span class="legend-text">Stream Processing</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #005571, #00bfb3);"></div>
+                    <span class="legend-text">Data Pipeline</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #fed10a, #24bbb1);"></div>
+                    <span class="legend-text">Search & Storage</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #e8478b, #f04e98);"></div>
+                    <span class="legend-text">Visualization</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span class="legend-text">Monitoring</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="control-btn" onclick="previousStep()" title="Previous Step">⏮️</button>
+                <button class="control-btn" onclick="toggleAnimation()" id="playPauseBtn" title="Play/Pause">⏸️</button>
+                <button class="control-btn" onclick="nextStep()" title="Next Step">⏭️</button>
+                <button class="control-btn" onclick="resetAnimation()" title="Reset">🔄</button>
+            </div>
+        </div>
+
+        <!-- Step Details -->
+        <section class="steps-panel">
+            <div class="step-card" id="step-card-1" onclick="highlightStep(1)">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Register Schema</h3>
+                <p class="step-description">Python producer registers Avro schemas with the Schema Registry for data validation and evolution support.</p>
+                <div class="step-components">
+                    <span class="component-tag">Python</span>
+                    <span class="component-tag">Schema Registry</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-2" onclick="highlightStep(2)">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Produce Messages</h3>
+                <p class="step-description">12 parallel producers generate sensor data from 6 quay cranes at ~7,000 events/sec to Kafka topics.</p>
+                <div class="step-components">
+                    <span class="component-tag">Python</span>
+                    <span class="component-tag">Kafka</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-3" onclick="highlightStep(3)">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Subscribe to Topics</h3>
+                <p class="step-description">Spark Structured Streaming subscribes to source topics (crane_sensors, crane_alerts, crane_performance).</p>
+                <div class="step-components">
+                    <span class="component-tag">Spark</span>
+                    <span class="component-tag">Kafka</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-4" onclick="highlightStep(4)">
+                <div class="step-number">4</div>
+                <h3 class="step-title">Stream Data</h3>
+                <p class="step-description">Kafka delivers real-time data streams to Spark workers with exactly-once semantics.</p>
+                <div class="step-components">
+                    <span class="component-tag">Kafka</span>
+                    <span class="component-tag">Spark</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-5" onclick="highlightStep(5)">
+                <div class="step-number">5</div>
+                <h3 class="step-title">Process Data</h3>
+                <p class="step-description">Spark executes 6 streaming queries: aggregations (1-min, 5-min), anomaly detection, health scoring, throughput calculation.</p>
+                <div class="step-components">
+                    <span class="component-tag">Spark Workers</span>
+                    <span class="component-tag">Checkpoints</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-6" onclick="highlightStep(6)">
+                <div class="step-number">6</div>
+                <h3 class="step-title">Write Processed</h3>
+                <p class="step-description">Spark writes processed results back to Kafka output topics (metrics, anomalies, health_status, throughput).</p>
+                <div class="step-components">
+                    <span class="component-tag">Spark</span>
+                    <span class="component-tag">Kafka</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-7" onclick="highlightStep(7)">
+                <div class="step-number">7</div>
+                <h3 class="step-title">Consume All Topics</h3>
+                <p class="step-description">Logstash consumes from all 8 Kafka topics using dedicated consumer groups for parallel processing.</p>
+                <div class="step-components">
+                    <span class="component-tag">Kafka</span>
+                    <span class="component-tag">Logstash</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-8" onclick="highlightStep(8)">
+                <div class="step-number">8</div>
+                <h3 class="step-title">Filter & Index</h3>
+                <p class="step-description">Logstash transforms data and bulk-indexes to Elasticsearch with ~10K docs/sec throughput.</p>
+                <div class="step-components">
+                    <span class="component-tag">Logstash</span>
+                    <span class="component-tag">Elasticsearch</span>
+                </div>
+            </div>
+
+            <div class="step-card" id="step-card-9" onclick="highlightStep(9)">
+                <div class="step-number">9</div>
+                <h3 class="step-title">Query & Visualize</h3>
+                <p class="step-description">Kibana queries Elasticsearch and renders 21 visualization panels with 30-second auto-refresh.</p>
+                <div class="step-components">
+                    <span class="component-tag">Elasticsearch</span>
+                    <span class="component-tag">Kibana</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Monitoring Section -->
+        <section class="monitoring-section fade-in">
+            <h3><span>📊</span> Monitoring Plane Components</h3>
+            <div class="monitoring-grid">
+                <div class="monitoring-item">
+                    <div class="monitoring-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">📦</div>
+                    <div class="monitoring-info">
+                        <h4>cAdvisor</h4>
+                        <p>Container CPU, Memory, Network, Disk metrics</p>
+                    </div>
+                </div>
+                <div class="monitoring-item">
+                    <div class="monitoring-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">📊</div>
+                    <div class="monitoring-info">
+                        <h4>Kafka Exporter</h4>
+                        <p>Broker, topic, consumer group metrics</p>
+                    </div>
+                </div>
+                <div class="monitoring-item">
+                    <div class="monitoring-icon" style="background: linear-gradient(135deg, #e25a1c, #c2410c);">🔥</div>
+                    <div class="monitoring-info">
+                        <h4>Prometheus</h4>
+                        <p>Time-series metrics storage & PromQL</p>
+                    </div>
+                </div>
+                <div class="monitoring-item">
+                    <div class="monitoring-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">📈</div>
+                    <div class="monitoring-info">
+                        <h4>Grafana</h4>
+                        <p>Infrastructure dashboards & alerts</p>
+                    </div>
+                </div>
+                <div class="monitoring-item">
+                    <div class="monitoring-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);">🖥️</div>
+                    <div class="monitoring-info">
+                        <h4>Redpanda Console</h4>
+                        <p>Kafka topic browser & message viewer</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Animation state
+        let isPlaying = true;
+        let currentStep = 0;
+        const totalSteps = 9;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTooltips();
+            startAutoPlay();
+            addParticleEffects();
+        });
+
+        // Tooltip functionality
+        function initTooltips() {
+            const tooltip = document.getElementById('tooltip');
+            const nodes = document.querySelectorAll('[data-tooltip]');
+
+            nodes.forEach(node => {
+                node.addEventListener('mouseenter', (e) => {
+                    const text = e.currentTarget.getAttribute('data-tooltip');
+                    tooltip.textContent = text;
+                    tooltip.classList.add('visible');
+                });
+
+                node.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = (e.pageX + 15) + 'px';
+                    tooltip.style.top = (e.pageY + 15) + 'px';
+                });
+
+                node.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
+                });
+            });
+        }
+
+        // Animation controls
+        function toggleAnimation() {
+            isPlaying = !isPlaying;
+            const playIcon = document.getElementById('playIcon');
+            const playText = document.getElementById('playText');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+
+            if (isPlaying) {
+                playIcon.textContent = '⏸️';
+                playText.textContent = 'Pause';
+                playPauseBtn.textContent = '⏸️';
+                document.querySelectorAll('.flow-arrow').forEach(arrow => {
+                    arrow.classList.remove('paused');
+                });
+                startAutoPlay();
+            } else {
+                playIcon.textContent = '▶️';
+                playText.textContent = 'Play';
+                playPauseBtn.textContent = '▶️';
+                document.querySelectorAll('.flow-arrow').forEach(arrow => {
+                    arrow.classList.add('paused');
+                });
+            }
+        }
+
+        function resetAnimation() {
+            currentStep = 0;
+            highlightStep(0);
+            document.querySelectorAll('.step-card').forEach(card => {
+                card.classList.remove('active');
+            });
+        }
+
+        function previousStep() {
+            currentStep = (currentStep - 1 + totalSteps) % totalSteps;
+            highlightStep(currentStep + 1);
+        }
+
+        function nextStep() {
+            currentStep = (currentStep + 1) % totalSteps;
+            highlightStep(currentStep + 1);
+        }
+
+        function highlightStep(step) {
+            // Remove active from all cards
+            document.querySelectorAll('.step-card').forEach(card => {
+                card.classList.remove('active');
+            });
+
+            // Add active to selected card
+            const selectedCard = document.getElementById(`step-card-${step}`);
+            if (selectedCard) {
+                selectedCard.classList.add('active');
+                selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Highlight corresponding flow
+            document.querySelectorAll('[id^="flow-"]').forEach(flow => {
+                flow.style.opacity = '0.3';
+            });
+
+            const selectedFlow = document.getElementById(`flow-${step}`);
+            if (selectedFlow) {
+                selectedFlow.style.opacity = '1';
+            }
+
+            currentStep = step - 1;
+        }
+
+        // Auto-play through steps
+        let autoPlayInterval;
+        function startAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            
+            autoPlayInterval = setInterval(() => {
+                if (isPlaying) {
+                    nextStep();
+                }
+            }, 3000);
+        }
+
+        // Add particle effects to simulate data flow
+        function addParticleEffects() {
+            const svg = document.querySelector('.diagram-svg');
+            const particlesGroup = document.getElementById('data-particles');
+
+            // Create animated particles along the main data path
+            function createParticle() {
+                if (!isPlaying) return;
+
+                const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                particle.setAttribute('r', '4');
+                particle.setAttribute('fill', '#3b82f6');
+                particle.setAttribute('opacity', '0.8');
+                
+                // Random path selection
+                const paths = [
+                    { x1: 160, y1: 75, x2: 400, y2: 75 },
+                    { x1: 520, y1: 75, x2: 760, y2: 75 },
+                    { x1: 880, y1: 75, x2: 1120, y2: 75 }
+                ];
+                
+                const path = paths[Math.floor(Math.random() * paths.length)];
+                
+                particle.setAttribute('cx', path.x1);
+                particle.setAttribute('cy', path.y1);
+                
+                particlesGroup.appendChild(particle);
+
+                // Animate particle
+                const duration = 1500 + Math.random() * 1000;
+                const startTime = Date.now();
+
+                function animate() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = elapsed / duration;
+
+                    if (progress >= 1) {
+                        particle.remove();
+                        return;
+                    }
+
+                    const x = path.x1 + (path.x2 - path.x1) * progress;
+                    const y = path.y1 + Math.sin(progress * Math.PI * 2) * 5;
+                    
+                    particle.setAttribute('cx', x);
+                    particle.setAttribute('cy', y);
+                    particle.setAttribute('opacity', 0.8 - progress * 0.5);
+
+                    requestAnimationFrame(animate);
+                }
+
+                animate();
+            }
+
+            // Create particles periodically
+            setInterval(() => {
+                if (isPlaying) {
+                    createParticle();
+                }
+            }, 500);
+        }
+
+        // Handle node clicks
+        document.querySelectorAll('.component-node').forEach(node => {
+            node.addEventListener('click', () => {
+                const nodeId = node.id;
+                if (nodeId) {
+                    const stepMap = {
+                        'node-python': 1,
+                        'node-schema': 1,
+                        'node-kafka': 2,
+                        'node-spark': 5,
+                        'node-logstash': 7,
+                        'node-elastic': 8,
+                        'node-kibana': 9
+                    };
+                    
+                    if (stepMap[nodeId]) {
+                        highlightStep(stepMap[nodeId]);
+                    }
+                }
+            });
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowRight':
+                    nextStep();
+                    break;
+                case 'ArrowLeft':
+                    previousStep();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    toggleAnimation();
+                    break;
+                case 'r':
+                case 'R':
+                    resetAnimation();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

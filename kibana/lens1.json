@@ -1,0 +1,32 @@
+{
+  "attributes": {
+    "title": "Crane Health Heatmap",
+    "state": {
+      "datasourceStates": {
+        "formBased": {
+          "layers": {
+            "layer1": {
+              "columns": {
+                "col1": {"dataType": "string", "isBucketed": true, "operationType": "terms", "sourceField": "crane_id.keyword", "params": {"size": 72, "orderBy": {"type": "column", "columnId": "col3"}, "orderDirection": "desc"}},
+                "col2": {"dataType": "date", "isBucketed": true, "operationType": "date_histogram", "sourceField": "@timestamp", "params": {"interval": "auto"}},
+                "col3": {"dataType": "number", "isBucketed": false, "operationType": "average", "sourceField": "health_score"}
+              },
+              "columnOrder": ["col1", "col2", "col3"]
+            }
+          }
+        }
+      },
+      "visualization": {
+        "layerId": "layer1",
+        "layerType": "data",
+        "xAccessor": "col2",
+        "yAccessor": "col1",
+        "valueAccessor": "col3",
+        "shape": "heatmap"
+      }
+    },
+    "title": "Crane Health Heatmap",
+    "visualizationType": "lnsHeatmap"
+  },
+  "references": [{"id": "929c7f13-8569-481c-b4f1-9f6b687c7f22", "name": "indexpattern-datasource-layer-layer1", "type": "index-pattern"}]
+}

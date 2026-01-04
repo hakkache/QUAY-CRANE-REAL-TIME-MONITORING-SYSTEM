@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Dependency Chain - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --glow-blue: 0 0 30px rgba(59, 130, 246, 0.3);
+            --glow-green: 0 0 30px rgba(16, 185, 129, 0.3);
+            --glow-purple: 0 0 30px rgba(139, 92, 246, 0.3);
+            --glow-orange: 0 0 30px rgba(245, 158, 11, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 60%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            border-color: var(--accent-purple);
+            box-shadow: var(--glow-purple);
+        }
+
+        .btn.active {
+            background: var(--accent-purple);
+            border-color: var(--accent-purple);
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem 3rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        /* Dependency levels container */
+        .levels-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+        }
+
+        /* Vertical connection line */
+        .levels-container::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, 
+                var(--accent-purple) 0%, 
+                var(--accent-blue) 20%,
+                var(--accent-cyan) 40%,
+                var(--accent-green) 60%,
+                var(--accent-orange) 80%,
+                var(--accent-red) 100%);
+            transform: translateX(-50%);
+            border-radius: 2px;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        /* Level section */
+        .level-section {
+            position: relative;
+            z-index: 1;
+        }
+
+        .level-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .level-badge {
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            to { left: 100%; }
+        }
+
+        .level-0 .level-badge { background: linear-gradient(135deg, var(--accent-purple), #a855f7); color: white; }
+        .level-1 .level-badge { background: linear-gradient(135deg, var(--accent-blue), #60a5fa); color: white; }
+        .level-2 .level-badge { background: linear-gradient(135deg, var(--accent-cyan), #22d3ee); color: #0a0a0f; }
+        .level-3 .level-badge { background: linear-gradient(135deg, var(--accent-green), #34d399); color: #0a0a0f; }
+        .level-4 .level-badge { background: linear-gradient(135deg, var(--accent-orange), #fbbf24); color: #0a0a0f; }
+        .level-5 .level-badge { background: linear-gradient(135deg, var(--accent-red), #f87171); color: white; }
+
+        .level-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Services grid */
+        .services-grid {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Service card */
+        .service-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            min-width: 180px;
+            max-width: 200px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        .service-card.controller::before { background: linear-gradient(90deg, var(--accent-purple), #a855f7); }
+        .service-card.controller:hover { box-shadow: 0 0 30px rgba(139, 92, 246, 0.3); border-color: var(--accent-purple); }
+
+        .service-card.broker::before { background: linear-gradient(90deg, var(--accent-blue), #60a5fa); }
+        .service-card.broker:hover { box-shadow: var(--glow-blue); border-color: var(--accent-blue); }
+
+        .service-card.kafka-related::before { background: linear-gradient(90deg, var(--accent-cyan), #22d3ee); }
+        .service-card.kafka-related:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.3); border-color: var(--accent-cyan); }
+
+        .service-card.spark::before { background: linear-gradient(90deg, var(--accent-green), #34d399); }
+        .service-card.spark:hover { box-shadow: var(--glow-green); border-color: var(--accent-green); }
+
+        .service-card.elk::before { background: linear-gradient(90deg, var(--accent-orange), #fbbf24); }
+        .service-card.elk:hover { box-shadow: var(--glow-orange); border-color: var(--accent-orange); }
+
+        .service-card.monitoring::before { background: linear-gradient(90deg, var(--accent-red), #f87171); }
+        .service-card.monitoring:hover { box-shadow: 0 0 30px rgba(239, 68, 68, 0.3); border-color: var(--accent-red); }
+
+        .service-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .service-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .service-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .service-detail {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .service-port {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.125rem 0.375rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+        }
+
+        .service-status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        }
+
+        /* Group box */
+        .service-group {
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .service-group-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .service-group-inner {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .service-group-footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Dependency arrows */
+        .dependency-arrow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.75rem 0;
+            position: relative;
+        }
+
+        .arrow-line {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .arrow-icon {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            animation: bounce 1.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        .arrow-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            padding: 0.25rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Startup commands section */
+        .startup-section {
+            margin-top: 3rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .startup-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue), var(--accent-cyan), var(--accent-green));
+        }
+
+        .startup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .startup-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-all-btn {
+            padding: 0.5rem 1rem;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-all-btn:hover {
+            background: #7c3aed;
+            transform: scale(1.02);
+        }
+
+        .startup-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .startup-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .startup-step:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-secondary);
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .step-1 .step-number { background: var(--accent-purple); color: white; }
+        .step-2 .step-number { background: var(--accent-blue); color: white; }
+        .step-3 .step-number { background: var(--accent-cyan); color: #0a0a0f; }
+        .step-4 .step-number { background: var(--accent-green); color: #0a0a0f; }
+        .step-5 .step-number { background: var(--accent-orange); color: #0a0a0f; }
+        .step-6 .step-number { background: var(--accent-orange); color: #0a0a0f; }
+        .step-7 .step-number { background: var(--accent-red); color: white; }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-command {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            background: var(--bg-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .copy-btn {
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .copy-btn.copied {
+            background: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+        }
+
+        /* Quick start banner */
+        .quick-start {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+            border: 2px solid var(--accent-green);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .quick-start-label {
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-start-command {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-start-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Footer stats */
+        .footer-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-stat {
+            text-align: center;
+        }
+
+        .footer-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .footer-stat-value.purple { color: var(--accent-purple); }
+        .footer-stat-value.blue { color: var(--accent-blue); }
+        .footer-stat-value.cyan { color: var(--accent-cyan); }
+        .footer-stat-value.green { color: var(--accent-green); }
+        .footer-stat-value.orange { color: var(--accent-orange); }
+
+        .footer-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .services-grid {
+                gap: 1rem;
+            }
+
+            .service-card {
+                min-width: 160px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .section-title h2 {
+                font-size: 1.75rem;
+            }
+
+            .legend {
+                gap: 1rem;
+            }
+
+            .service-card {
+                min-width: 140px;
+                max-width: 160px;
+            }
+
+            .footer-stats {
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+
+            .step-command {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Animation for cards */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .level-0 { animation-delay: 0.1s; }
+        .level-1 { animation-delay: 0.2s; }
+        .level-2 { animation-delay: 0.3s; }
+        .level-3 { animation-delay: 0.4s; }
+        .level-4 { animation-delay: 0.5s; }
+        .level-5 { animation-delay: 0.6s; }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            max-width: 250px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--accent-cyan);
+        }
+
+        .tooltip-content {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🔗</div>
+                <div class="logo-text">
+                    <h1>Service Dependency Chain</h1>
+                    <p>Quay Crane Monitoring System</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn" id="animateBtn" onclick="animateStartup()">
+                    ▶️ Animate Startup
+                </button>
+                <button class="btn" id="resetBtn" onclick="resetAnimation()">
+                    🔄 Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>🔗 Service Startup Dependency Chain</h2>
+            <p>Visual representation of service dependencies and recommended startup order</p>
+        </section>
+
+        <!-- Legend -->
+        <div class="legend fade-in">
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-purple);"></div>
+                <span>Kafka Controllers</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-blue);"></div>
+                <span>Kafka Brokers</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-cyan);"></div>
+                <span>Kafka Services</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-green);"></div>
+                <span>Spark Cluster</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-orange);"></div>
+                <span>ELK Stack</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--accent-red);"></div>
+                <span>Monitoring</span>
+            </div>
+        </div>
+
+        <!-- Dependency Levels -->
+        <div class="levels-container">
+            <!-- Level 0 -->
+            <div class="level-section level-0 fade-in" data-level="0">
+                <div class="level-header">
+                    <span class="level-title">No Dependencies</span>
+                    <span class="level-badge">🚀 LEVEL 0 — Start First</span>
+                    <span class="level-title">Foundation Layer</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card controller" data-service="kafka-controller-1" data-tooltip="Kafka Controller 1|First KRaft controller node forming the quorum cluster">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🎮</span>
+                        <span class="service-name">kafka-controller-1</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=1</span>
+                            <span class="service-detail">KRaft Mode</span>
+                        </div>
+                    </div>
+                    <div class="service-card controller" data-service="kafka-controller-2" data-tooltip="Kafka Controller 2|Second KRaft controller for high availability">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🎮</span>
+                        <span class="service-name">kafka-controller-2</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=2</span>
+                            <span class="service-detail">KRaft Mode</span>
+                        </div>
+                    </div>
+                    <div class="service-card controller" data-service="kafka-controller-3" data-tooltip="Kafka Controller 3|Third KRaft controller completing the quorum">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🎮</span>
+                        <span class="service-name">kafka-controller-3</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=3</span>
+                            <span class="service-detail">KRaft Mode</span>
+                        </div>
+                    </div>
+                    <div class="service-card monitoring" data-service="prometheus" data-tooltip="Prometheus|Time-series metrics database for monitoring and alerting">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📊</span>
+                        <span class="service-name">prometheus</span>
+                        <div class="service-details">
+                            <span class="service-port">:9090</span>
+                            <span class="service-detail">Metrics DB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="dependency-arrow">
+                <div class="arrow-line">
+                    <span class="arrow-label">KRaft Quorum Established</span>
+                    <span class="arrow-icon">⬇️</span>
+                </div>
+            </div>
+
+            <!-- Level 1 -->
+            <div class="level-section level-1 fade-in" data-level="1">
+                <div class="level-header">
+                    <span class="level-title">Depends on Controllers</span>
+                    <span class="level-badge">📦 LEVEL 1 — Broker Cluster</span>
+                    <span class="level-title">Message Handlers</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card broker" data-service="kafka-broker-1" data-tooltip="Kafka Broker 1|Primary message broker handling partitions and replication">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📦</span>
+                        <span class="service-name">kafka-broker-1</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=4</span>
+                            <span class="service-port">:29092</span>
+                            <span class="service-port">:19092</span>
+                        </div>
+                    </div>
+                    <div class="service-card broker" data-service="kafka-broker-2" data-tooltip="Kafka Broker 2|Second broker for load distribution and redundancy">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📦</span>
+                        <span class="service-name">kafka-broker-2</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=5</span>
+                            <span class="service-port">:39092</span>
+                            <span class="service-port">:19092</span>
+                        </div>
+                    </div>
+                    <div class="service-card broker" data-service="kafka-broker-3" data-tooltip="Kafka Broker 3|Third broker completing the cluster for fault tolerance">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📦</span>
+                        <span class="service-name">kafka-broker-3</span>
+                        <div class="service-details">
+                            <span class="service-detail">node.id=6</span>
+                            <span class="service-port">:49092</span>
+                            <span class="service-port">:19092</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="dependency-arrow">
+                <div class="arrow-line">
+                    <span class="arrow-label">Broker Cluster Ready</span>
+                    <span class="arrow-icon">⬇️</span>
+                </div>
+            </div>
+
+            <!-- Level 2 -->
+            <div class="level-section level-2 fade-in" data-level="2">
+                <div class="level-header">
+                    <span class="level-title">Depends on Brokers</span>
+                    <span class="level-badge">⚙️ LEVEL 2 — Kafka Services</span>
+                    <span class="level-title">Schema & Processing</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card kafka-related" data-service="schema-registry" data-tooltip="Schema Registry|Manages Avro schemas for Kafka message serialization">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📋</span>
+                        <span class="service-name">schema-registry</span>
+                        <div class="service-details">
+                            <span class="service-port">:18081</span>
+                            <span class="service-detail">Avro Schemas</span>
+                        </div>
+                    </div>
+                    <div class="service-card kafka-related" data-service="kafka-exporter" data-tooltip="Kafka Exporter|Exports Kafka metrics to Prometheus format">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📤</span>
+                        <span class="service-name">kafka-exporter</span>
+                        <div class="service-details">
+                            <span class="service-port">:9308</span>
+                            <span class="service-detail">Prometheus Metrics</span>
+                        </div>
+                    </div>
+                    <div class="service-card spark" data-service="spark-master" data-tooltip="Spark Master|Cluster manager coordinating Spark workers">
+                        <span class="service-status"></span>
+                        <span class="service-icon">⚡</span>
+                        <span class="service-name">spark-master</span>
+                        <div class="service-details">
+                            <span class="service-port">:8082</span>
+                            <span class="service-port">:7077</span>
+                            <span class="service-detail">Cluster Manager</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="dependency-arrow">
+                <div class="arrow-line">
+                    <span class="arrow-label">Schema Registry & Spark Master Ready</span>
+                    <span class="arrow-icon">⬇️</span>
+                </div>
+            </div>
+
+            <!-- Level 3 -->
+            <div class="level-section level-3 fade-in" data-level="3">
+                <div class="level-header">
+                    <span class="level-title">Depends on Level 2</span>
+                    <span class="level-badge">🖥️ LEVEL 3 — Workers & UI</span>
+                    <span class="level-title">Processing Power</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card kafka-related" data-service="console" data-tooltip="Redpanda Console|Web UI for Kafka cluster management and monitoring">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🖥️</span>
+                        <span class="service-name">console</span>
+                        <div class="service-details">
+                            <span class="service-port">:8080</span>
+                            <span class="service-detail">Redpanda UI</span>
+                        </div>
+                    </div>
+                    <div class="service-group">
+                        <div class="service-group-title">Spark Workers</div>
+                        <div class="service-group-inner">
+                            <div class="service-card spark" data-service="spark-worker-1" data-tooltip="Spark Worker 1|Distributed processing node with 2 cores and 2GB RAM" style="min-width: 130px;">
+                                <span class="service-status"></span>
+                                <span class="service-icon">⚙️</span>
+                                <span class="service-name">spark_worker</span>
+                                <div class="service-details">
+                                    <span class="service-detail">2c / 2GB</span>
+                                </div>
+                            </div>
+                            <div class="service-card spark" data-service="spark-worker-2" data-tooltip="Spark Worker 2|Second processing node for parallel execution" style="min-width: 130px;">
+                                <span class="service-status"></span>
+                                <span class="service-icon">⚙️</span>
+                                <span class="service-name">spark_worker-2</span>
+                                <div class="service-details">
+                                    <span class="service-detail">2c / 2GB</span>
+                                </div>
+                            </div>
+                            <div class="service-card spark" data-service="spark-worker-3" data-tooltip="Spark Worker 3|Third processing node for scalable compute" style="min-width: 130px;">
+                                <span class="service-status"></span>
+                                <span class="service-icon">⚙️</span>
+                                <span class="service-name">spark_worker-3</span>
+                                <div class="service-details">
+                                    <span class="service-detail">2c / 2GB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-group-footer">Total: 6 cores / 6GB RAM</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="dependency-arrow">
+                <div class="arrow-line">
+                    <span class="arrow-label">Independent Stack</span>
+                    <span class="arrow-icon">⬇️</span>
+                </div>
+            </div>
+
+            <!-- Level 4 -->
+            <div class="level-section level-4 fade-in" data-level="4">
+                <div class="level-header">
+                    <span class="level-title">Independent Stack</span>
+                    <span class="level-badge">🔍 LEVEL 4 — ELK Stack</span>
+                    <span class="level-title">Search & Analytics</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card elk" data-service="elasticsearch" data-tooltip="Elasticsearch|Distributed search and analytics engine for log storage">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🔍</span>
+                        <span class="service-name">elasticsearch</span>
+                        <div class="service-details">
+                            <span class="service-port">:9200</span>
+                            <span class="service-detail">8GB Heap</span>
+                            <span class="service-detail">Health: green/yellow</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dependency-arrow" style="padding: 0.5rem 0;">
+                    <div class="arrow-line">
+                        <span class="arrow-label">service_healthy</span>
+                        <span class="arrow-icon">⬇️</span>
+                    </div>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card elk" data-service="logstash" data-tooltip="Logstash|Data processing pipeline - ingests from Kafka, outputs to ES">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🔧</span>
+                        <span class="service-name">logstash</span>
+                        <div class="service-details">
+                            <span class="service-port">:9600</span>
+                            <span class="service-detail">Input: Kafka</span>
+                            <span class="service-detail">Output: ES</span>
+                        </div>
+                    </div>
+                    <div class="service-card elk" data-service="kibana" data-tooltip="Kibana|Visualization dashboard for Elasticsearch data">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📈</span>
+                        <span class="service-name">kibana</span>
+                        <div class="service-details">
+                            <span class="service-port">:5601</span>
+                            <span class="service-detail">ES Connection</span>
+                            <span class="service-detail">Dashboards</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="dependency-arrow">
+                <div class="arrow-line">
+                    <span class="arrow-label">Monitoring Layer</span>
+                    <span class="arrow-icon">⬇️</span>
+                </div>
+            </div>
+
+            <!-- Level 5 -->
+            <div class="level-section level-5 fade-in" data-level="5">
+                <div class="level-header">
+                    <span class="level-title">Depends on Prometheus</span>
+                    <span class="level-badge">📡 LEVEL 5 — Monitoring</span>
+                    <span class="level-title">Observability</span>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card monitoring" data-service="cadvisor" data-tooltip="cAdvisor|Container metrics collector with Docker socket access">
+                        <span class="service-status"></span>
+                        <span class="service-icon">🐳</span>
+                        <span class="service-name">cadvisor</span>
+                        <div class="service-details">
+                            <span class="service-port">:8085</span>
+                            <span class="service-detail">Docker socket</span>
+                            <span class="service-detail">privileged: true</span>
+                        </div>
+                    </div>
+                    <div class="service-card monitoring" data-service="grafana" data-tooltip="Grafana|Metrics visualization with auto-provisioned dashboards">
+                        <span class="service-status"></span>
+                        <span class="service-icon">📊</span>
+                        <span class="service-name">grafana</span>
+                        <div class="service-details">
+                            <span class="service-port">:3001</span>
+                            <span class="service-detail">Prometheus DS</span>
+                            <span class="service-detail">Auto-provision</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Startup Commands Section -->
+        <div class="startup-section fade-in">
+            <div class="startup-header">
+                <span class="startup-title">📋 Recommended Startup Order</span>
+                <button class="copy-all-btn" onclick="copyAllCommands()">
+                    📋 Copy All Commands
+                </button>
+            </div>
+            <div class="startup-steps">
+                <div class="startup-step step-1">
+                    <span class="step-number">1</span>
+                    <div class="step-content">
+                        <div class="step-label">Controllers & Prometheus</div>
+                        <div class="step-command">docker compose up -d kafka-controller-1 kafka-controller-2 kafka-controller-3 prometheus</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d kafka-controller-1 kafka-controller-2 kafka-controller-3 prometheus')">📋</button>
+                </div>
+                <div class="startup-step step-2">
+                    <span class="step-number">2</span>
+                    <div class="step-content">
+                        <div class="step-label">Kafka Brokers</div>
+                        <div class="step-command">docker compose up -d kafka-broker-1 kafka-broker-2 kafka-broker-3</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d kafka-broker-1 kafka-broker-2 kafka-broker-3')">📋</button>
+                </div>
+                <div class="startup-step step-3">
+                    <span class="step-number">3</span>
+                    <div class="step-content">
+                        <div class="step-label">Schema Registry, Kafka Exporter & Spark Master</div>
+                        <div class="step-command">docker compose up -d schema-registry kafka-exporter spark-master</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d schema-registry kafka-exporter spark-master')">📋</button>
+                </div>
+                <div class="startup-step step-4">
+                    <span class="step-number">4</span>
+                    <div class="step-content">
+                        <div class="step-label">Console & Spark Workers</div>
+                        <div class="step-command">docker compose up -d console spark-worker spark_worker-2 spark_worker-3</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d console spark-worker spark_worker-2 spark_worker-3')">📋</button>
+                </div>
+                <div class="startup-step step-5">
+                    <span class="step-number">5</span>
+                    <div class="step-content">
+                        <div class="step-label">Elasticsearch</div>
+                        <div class="step-command">docker compose up -d elasticsearch</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d elasticsearch')">📋</button>
+                </div>
+                <div class="startup-step step-6">
+                    <span class="step-number">6</span>
+                    <div class="step-content">
+                        <div class="step-label">Logstash & Kibana</div>
+                        <div class="step-command">docker compose up -d logstash kibana</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d logstash kibana')">📋</button>
+                </div>
+                <div class="startup-step step-7">
+                    <span class="step-number">7</span>
+                    <div class="step-content">
+                        <div class="step-label">cAdvisor & Grafana</div>
+                        <div class="step-command">docker compose up -d cadvisor grafana</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(this, 'docker compose up -d cadvisor grafana')">📋</button>
+                </div>
+            </div>
+
+            <div class="quick-start">
+                <div class="quick-start-label">✨ Quick Start (Automatic Dependency Resolution)</div>
+                <div class="quick-start-command">docker compose up -d</div>
+                <div class="quick-start-note">Docker Compose handles dependency order automatically based on depends_on configuration</div>
+            </div>
+        </div>
+
+        <!-- Footer Stats -->
+        <div class="footer-stats fade-in">
+            <div class="footer-stat">
+                <div class="footer-stat-value purple">17</div>
+                <div class="footer-stat-label">Total Containers</div>
+            </div>
+            <div class="footer-stat">
+                <div class="footer-stat-value blue">6</div>
+                <div class="footer-stat-label">Kafka Nodes</div>
+            </div>
+            <div class="footer-stat">
+                <div class="footer-stat-value cyan">4</div>
+                <div class="footer-stat-label">Spark Nodes</div>
+            </div>
+            <div class="footer-stat">
+                <div class="footer-stat-value orange">3</div>
+                <div class="footer-stat-label">ELK Services</div>
+            </div>
+            <div class="footer-stat">
+                <div class="footer-stat-value green">6</div>
+                <div class="footer-stat-label">Dependency Levels</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-title"></div>
+        <div class="tooltip-content"></div>
+    </div>
+
+    <script>
+        // Tooltip functionality
+        const tooltip = document.getElementById('tooltip');
+        const serviceCards = document.querySelectorAll('.service-card');
+
+        serviceCards.forEach(card => {
+            card.addEventListener('mouseenter', (e) => {
+                const tooltipData = card.getAttribute('data-tooltip');
+                if (tooltipData) {
+                    const [title, content] = tooltipData.split('|');
+                    tooltip.querySelector('.tooltip-title').textContent = title;
+                    tooltip.querySelector('.tooltip-content').textContent = content;
+                    tooltip.classList.add('visible');
+                }
+            });
+
+            card.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+            });
+
+            card.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('visible');
+            });
+        });
+
+        // Copy command function
+        function copyCommand(btn, command) {
+            navigator.clipboard.writeText(command).then(() => {
+                btn.classList.add('copied');
+                btn.textContent = '✓';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋';
+                }, 2000);
+            });
+        }
+
+        // Copy all commands
+        function copyAllCommands() {
+            const commands = [
+                '# Step 1: Controllers & Prometheus',
+                'docker compose up -d kafka-controller-1 kafka-controller-2 kafka-controller-3 prometheus',
+                '',
+                '# Step 2: Kafka Brokers',
+                'docker compose up -d kafka-broker-1 kafka-broker-2 kafka-broker-3',
+                '',
+                '# Step 3: Schema Registry, Kafka Exporter & Spark Master',
+                'docker compose up -d schema-registry kafka-exporter spark-master',
+                '',
+                '# Step 4: Console & Spark Workers',
+                'docker compose up -d console spark-worker spark_worker-2 spark_worker-3',
+                '',
+                '# Step 5: Elasticsearch',
+                'docker compose up -d elasticsearch',
+                '',
+                '# Step 6: Logstash & Kibana',
+                'docker compose up -d logstash kibana',
+                '',
+                '# Step 7: cAdvisor & Grafana',
+                'docker compose up -d cadvisor grafana',
+                '',
+                '# Or simply (auto-handles dependencies):',
+                'docker compose up -d'
+            ].join('\n');
+
+            navigator.clipboard.writeText(commands).then(() => {
+                const btn = document.querySelector('.copy-all-btn');
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = '📋 Copy All Commands';
+                }, 2000);
+            });
+        }
+
+        // Animate startup sequence
+        let animationRunning = false;
+        let animationTimeouts = [];
+
+        function animateStartup() {
+            if (animationRunning) return;
+            animationRunning = true;
+            
+            const btn = document.getElementById('animateBtn');
+            btn.classList.add('active');
+            btn.innerHTML = '⏸️ Animating...';
+
+            // Reset all cards first
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.style.opacity = '0.3';
+                card.style.transform = 'scale(0.95)';
+                card.querySelector('.service-status').style.background = 'var(--text-muted)';
+                card.querySelector('.service-status').style.animation = 'none';
+            });
+
+            // Animate level by level
+            const levels = [0, 1, 2, 3, 4, 5];
+            let delay = 0;
+
+            levels.forEach((level, index) => {
+                const levelSection = document.querySelector(`[data-level="${level}"]`);
+                const cards = levelSection.querySelectorAll('.service-card');
+
+                const timeout = setTimeout(() => {
+                    cards.forEach((card, cardIndex) => {
+                        setTimeout(() => {
+                            card.style.opacity = '1';
+                            card.style.transform = 'scale(1)';
+                            card.style.transition = 'all 0.5s ease';
+                            
+                            const status = card.querySelector('.service-status');
+                            status.style.background = 'var(--accent-green)';
+                            status.style.animation = 'pulse 2s infinite';
+                        }, cardIndex * 200);
+                    });
+                }, delay);
+
+                animationTimeouts.push(timeout);
+                delay += 1500 + (cards.length * 200);
+            });
+
+            // Reset button after animation
+            const finalTimeout = setTimeout(() => {
+                animationRunning = false;
+                btn.classList.remove('active');
+                btn.innerHTML = '▶️ Animate Startup';
+            }, delay);
+            animationTimeouts.push(finalTimeout);
+        }
+
+        function resetAnimation() {
+            // Clear all timeouts
+            animationTimeouts.forEach(t => clearTimeout(t));
+            animationTimeouts = [];
+            animationRunning = false;
+
+            const btn = document.getElementById('animateBtn');
+            btn.classList.remove('active');
+            btn.innerHTML = '▶️ Animate Startup';
+
+            // Reset all cards
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+                card.style.transition = 'all 0.3s ease';
+                
+                const status = card.querySelector('.service-status');
+                status.style.background = 'var(--accent-green)';
+                status.style.animation = 'pulse 2s infinite';
+            });
+        }
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Add click to highlight dependencies
+        serviceCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove previous highlights
+                document.querySelectorAll('.service-card').forEach(c => {
+                    c.style.boxShadow = '';
+                });
+
+                // Add highlight to clicked card
+                const cardType = Array.from(card.classList).find(c => 
+                    ['controller', 'broker', 'kafka-related', 'spark', 'elk', 'monitoring'].includes(c)
+                );
+
+                if (cardType) {
+                    document.querySelectorAll(`.service-card.${cardType}`).forEach(c => {
+                        c.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.5)';
+                    });
+                }
+
+                setTimeout(() => {
+                    document.querySelectorAll('.service-card').forEach(c => {
+                        c.style.boxShadow = '';
+                    });
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

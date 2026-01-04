@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apache Spark Cluster - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --spark-orange: #e25a1c;
+            --spark-yellow: #f7b500;
+            --spark-dark: #1a1a2e;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(226, 90, 28, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 40%, rgba(247, 181, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(226, 90, 28, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 90, 28, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--spark-orange), var(--spark-yellow));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--spark-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .cluster-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(226, 90, 28, 0.15);
+            border: 1px solid var(--spark-orange);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--spark-orange);
+        }
+
+        .cluster-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--spark-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Cluster Container */
+        .cluster-container {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .cluster-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--spark-orange), var(--spark-yellow));
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* Master Node */
+        .master-card {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--spark-orange);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0 30px rgba(226, 90, 28, 0.15);
+        }
+
+        .master-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .master-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .master-icon {
+            font-size: 1.75rem;
+        }
+
+        .master-name h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--spark-orange);
+        }
+
+        .master-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+
+        .container-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .image-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Process Cards */
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .process-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .process-card:hover {
+            border-color: var(--spark-orange);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(226, 90, 28, 0.2);
+        }
+
+        .process-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--spark-yellow);
+            margin-bottom: 0.5rem;
+        }
+
+        .process-port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.75rem;
+        }
+
+        .process-features {
+            list-style: none;
+        }
+
+        .process-features li {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 0.2rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .process-features li::before {
+            content: '•';
+            color: var(--spark-orange);
+        }
+
+        /* Volumes Section */
+        .volumes-section {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+
+        .volumes-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .volume-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--accent-cyan);
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .volume-item::before {
+            content: '📁';
+            font-size: 0.75rem;
+        }
+
+        /* Connection Lines */
+        .connection-lines {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.75rem 0;
+        }
+
+        .connection-container {
+            display: flex;
+            gap: 4rem;
+        }
+
+        .connection-line {
+            width: 3px;
+            height: 40px;
+            background: linear-gradient(180deg, var(--spark-orange), var(--spark-yellow));
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .connection-line::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--spark-yellow);
+        }
+
+        /* Worker Grid */
+        .workers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .worker-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .worker-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--spark-yellow);
+        }
+
+        .worker-card:hover {
+            border-color: var(--spark-yellow);
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(247, 181, 0, 0.15);
+        }
+
+        .worker-header {
+            text-align: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .worker-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--spark-yellow);
+        }
+
+        .worker-container {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .worker-resources {
+            background: var(--bg-primary);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .resource-title {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            padding: 0.2rem 0;
+        }
+
+        .resource-label {
+            color: var(--text-muted);
+        }
+
+        .resource-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .worker-url {
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--spark-orange);
+            background: var(--bg-primary);
+            padding: 0.375rem;
+            border-radius: 4px;
+        }
+
+        /* Processor Section */
+        .processor-card {
+            background: var(--bg-card);
+            border: 2px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .processor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .processor-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .processor-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+
+        .processor-file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+        }
+
+        /* Streaming Queries */
+        .queries-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .queries-header {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .queries-count {
+            color: var(--accent-green);
+        }
+
+        .queries-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .query-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.875rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .query-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .query-card.metrics::before { background: var(--accent-blue); }
+        .query-card.health::before { background: var(--accent-green); }
+        .query-card.anomaly::before { background: var(--accent-red); }
+        .query-card.throughput::before { background: var(--accent-orange); }
+        .query-card.alert::before { background: var(--accent-pink); }
+
+        .query-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .query-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .query-card.metrics .query-title { color: var(--accent-blue); }
+        .query-card.health .query-title { color: var(--accent-green); }
+        .query-card.anomaly .query-title { color: var(--accent-red); }
+        .query-card.throughput .query-title { color: var(--accent-orange); }
+        .query-card.alert .query-title { color: var(--accent-pink); }
+
+        .query-type {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .query-features {
+            list-style: none;
+        }
+
+        .query-features li {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            padding: 0.15rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .query-features li::before {
+            content: '•';
+            color: var(--accent-purple);
+        }
+
+        .query-output {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--accent-cyan);
+        }
+
+        /* Checkpoint Footer */
+        .checkpoint-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .checkpoint-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .checkpoint-icon {
+            font-size: 1rem;
+        }
+
+        .checkpoint-label {
+            color: var(--text-muted);
+        }
+
+        .checkpoint-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.7rem;
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.orange { color: var(--spark-orange); }
+        .stat-value.yellow { color: var(--spark-yellow); }
+        .stat-value.purple { color: var(--accent-purple); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+        .stat-value.green { color: var(--accent-green); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Activity Indicator */
+        .activity-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            border-radius: 20px;
+        }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .activity-text {
+            font-size: 0.7rem;
+            color: var(--accent-green);
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .process-grid,
+            .workers-grid,
+            .queries-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .connection-container {
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .cluster-badge {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .process-grid,
+            .workers-grid,
+            .queries-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connection-container {
+                gap: 1rem;
+            }
+
+            .master-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .master-meta {
+                align-items: flex-start;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Data flow animation */
+        .data-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--spark-orange);
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 10px var(--spark-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <h1>Apache Spark Cluster</h1>
+                    <p>Standalone Mode - Stream Processing</p>
+                </div>
+            </div>
+            <div class="cluster-badge">
+                <span class="dot"></span>
+                <span>4 Containers Running</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>⚡ Apache Spark Cluster (Standalone Mode)</h2>
+            <p>Distributed stream processing with 1 master and 3 workers</p>
+        </section>
+
+        <!-- Cluster Container -->
+        <div class="cluster-container fade-in">
+            <!-- Master Node -->
+            <div class="master-card">
+                <div class="activity-indicator">
+                    <div class="activity-dot"></div>
+                    <span class="activity-text">ACTIVE</span>
+                </div>
+
+                <div class="master-header">
+                    <div class="master-title">
+                        <span class="master-icon">👑</span>
+                        <div class="master-name">
+                            <h3>SPARK MASTER</h3>
+                        </div>
+                    </div>
+                    <div class="master-meta">
+                        <span class="container-name">Container: spark-master</span>
+                        <span class="image-tag">apache/spark:3.5.0</span>
+                    </div>
+                </div>
+
+                <div class="process-grid">
+                    <div class="process-card">
+                        <div class="process-title">Master Process</div>
+                        <div class="process-port">Port: 7077</div>
+                        <ul class="process-features">
+                            <li>Cluster Manager</li>
+                            <li>Resource Allocation</li>
+                            <li>Worker Registry</li>
+                        </ul>
+                    </div>
+                    <div class="process-card">
+                        <div class="process-title">Spark UI</div>
+                        <div class="process-port">Port: 9190 → 8080</div>
+                        <ul class="process-features">
+                            <li>Job Monitoring</li>
+                            <li>Worker Status</li>
+                            <li>App History</li>
+                        </ul>
+                    </div>
+                    <div class="process-card">
+                        <div class="process-title">Driver Program</div>
+                        <div class="process-port">Port: 4040</div>
+                        <ul class="process-features">
+                            <li>App Dashboard</li>
+                            <li>Stage Progress</li>
+                            <li>Task Metrics</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="volumes-section">
+                    <div class="volumes-title">Volumes:</div>
+                    <div class="volume-item">./jobs → /opt/spark/jobs</div>
+                    <div class="volume-item">./mnt/checkpoints → /mnt/spark-checkpoints</div>
+                    <div class="volume-item">./mnt/spark-state → /mnt/spark-state</div>
+                </div>
+            </div>
+
+            <!-- Connection Lines -->
+            <div class="connection-lines">
+                <div class="connection-container">
+                    <div class="connection-line"></div>
+                    <div class="connection-line"></div>
+                    <div class="connection-line"></div>
+                </div>
+            </div>
+
+            <!-- Workers Grid -->
+            <div class="workers-grid">
+                <div class="worker-card" data-worker="1">
+                    <div class="worker-header">
+                        <div class="worker-title">SPARK WORKER 1</div>
+                        <div class="worker-container">spark-worker</div>
+                    </div>
+                    <div class="worker-resources">
+                        <div class="resource-title">Resources:</div>
+                        <div class="resource-item">
+                            <span class="resource-label">Cores:</span>
+                            <span class="resource-value">2</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Memory:</span>
+                            <span class="resource-value">2GB</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Executors:</span>
+                            <span class="resource-value">1-2</span>
+                        </div>
+                    </div>
+                    <div class="worker-url">spark://spark-master:7077</div>
+                </div>
+
+                <div class="worker-card" data-worker="2">
+                    <div class="worker-header">
+                        <div class="worker-title">SPARK WORKER 2</div>
+                        <div class="worker-container">spark_worker-2</div>
+                    </div>
+                    <div class="worker-resources">
+                        <div class="resource-title">Resources:</div>
+                        <div class="resource-item">
+                            <span class="resource-label">Cores:</span>
+                            <span class="resource-value">2</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Memory:</span>
+                            <span class="resource-value">2GB</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Executors:</span>
+                            <span class="resource-value">1-2</span>
+                        </div>
+                    </div>
+                    <div class="worker-url">spark://spark-master:7077</div>
+                </div>
+
+                <div class="worker-card" data-worker="3">
+                    <div class="worker-header">
+                        <div class="worker-title">SPARK WORKER 3</div>
+                        <div class="worker-container">spark_worker-3</div>
+                    </div>
+                    <div class="worker-resources">
+                        <div class="resource-title">Resources:</div>
+                        <div class="resource-item">
+                            <span class="resource-label">Cores:</span>
+                            <span class="resource-value">2</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Memory:</span>
+                            <span class="resource-value">2GB</span>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">Executors:</span>
+                            <span class="resource-value">1-2</span>
+                        </div>
+                    </div>
+                    <div class="worker-url">spark://spark-master:7077</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processor Section -->
+        <div class="processor-card fade-in">
+            <div class="processor-header">
+                <span>📊</span>
+                <span class="processor-title">STREAMING APPLICATION</span>
+                <span class="processor-file">spark_processor.py</span>
+            </div>
+
+            <div class="queries-section">
+                <div class="queries-header">
+                    ⚡ STREAMING QUERIES (<span class="queries-count">6 Active</span>)
+                </div>
+
+                <div class="queries-grid">
+                    <div class="query-card metrics">
+                        <div class="query-title">1-Minute Metrics</div>
+                        <div class="query-type">Tumbling window</div>
+                        <ul class="query-features">
+                            <li>avg(motor_temp)</li>
+                            <li>avg(hydraulic_p)</li>
+                            <li>avg(power_kw)</li>
+                        </ul>
+                        <div class="query-output">Output: metrics_1min</div>
+                    </div>
+
+                    <div class="query-card metrics">
+                        <div class="query-title">5-Minute Metrics</div>
+                        <div class="query-type">Tumbling window</div>
+                        <ul class="query-features">
+                            <li>avg(all_metrics)</li>
+                            <li>trend_analysis</li>
+                            <li>statistical_agg</li>
+                        </ul>
+                        <div class="query-output">Output: metrics_5min</div>
+                    </div>
+
+                    <div class="query-card health">
+                        <div class="query-title">Health Status</div>
+                        <div class="query-type">Real-time stream</div>
+                        <ul class="query-features">
+                            <li>health_score calc</li>
+                            <li>weighted factors</li>
+                            <li>status: GOOD/WARN</li>
+                        </ul>
+                        <div class="query-output">Output: health_status</div>
+                    </div>
+
+                    <div class="query-card anomaly">
+                        <div class="query-title">Anomaly Detection</div>
+                        <div class="query-type">Threshold breach:</div>
+                        <ul class="query-features">
+                            <li>temp > 80°C</li>
+                            <li>vibration > 5mm/s</li>
+                            <li>pressure < 200bar</li>
+                        </ul>
+                        <div class="query-output">Output: anomalies</div>
+                    </div>
+
+                    <div class="query-card throughput">
+                        <div class="query-title">Throughput Calc</div>
+                        <div class="query-type">5-min window</div>
+                        <ul class="query-features">
+                            <li>containers/hour</li>
+                            <li>cycle_efficiency</li>
+                            <li>utilization %</li>
+                        </ul>
+                        <div class="query-output">Output: throughput</div>
+                    </div>
+
+                    <div class="query-card alert">
+                        <div class="query-title">Alert Summary</div>
+                        <div class="query-type">1-min window</div>
+                        <ul class="query-features">
+                            <li>count by type</li>
+                            <li>count by crane</li>
+                            <li>severity levels</li>
+                        </ul>
+                        <div class="query-output">Output: alert_summary</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkpoint-footer">
+                <div class="checkpoint-item">
+                    <span class="checkpoint-icon">💾</span>
+                    <span class="checkpoint-label">Checkpointing:</span>
+                    <span class="checkpoint-value">/mnt/spark-checkpoints/</span>
+                </div>
+                <div class="checkpoint-item">
+                    <span class="checkpoint-icon">🔒</span>
+                    <span class="checkpoint-label">Exactly-once semantics</span>
+                </div>
+                <div class="checkpoint-item">
+                    <span class="checkpoint-icon">📦</span>
+                    <span class="checkpoint-label">State Store:</span>
+                    <span class="checkpoint-value">/mnt/spark-state/</span>
+                </div>
+                <div class="checkpoint-item">
+                    <span class="checkpoint-icon">🛡️</span>
+                    <span class="checkpoint-label">Fault tolerance</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value orange">4</div>
+                <div class="stat-label">Containers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value yellow">6</div>
+                <div class="stat-label">Cores Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value purple">6</div>
+                <div class="stat-label">Streaming Queries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value cyan">6GB</div>
+                <div class="stat-label">Worker Memory</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value green">3</div>
+                <div class="stat-label">Workers</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Simulate worker activity
+        function simulateWorkerActivity() {
+            const workers = document.querySelectorAll('.worker-card');
+            const randomWorker = workers[Math.floor(Math.random() * workers.length)];
+            
+            randomWorker.style.boxShadow = '0 0 25px rgba(226, 90, 28, 0.4)';
+            randomWorker.style.borderColor = 'var(--spark-orange)';
+            
+            setTimeout(() => {
+                randomWorker.style.boxShadow = '';
+                randomWorker.style.borderColor = 'var(--border-color)';
+            }, 800);
+        }
+
+        setInterval(simulateWorkerActivity, 2000);
+
+        // Simulate query processing
+        function simulateQueryProcessing() {
+            const queries = document.querySelectorAll('.query-card');
+            queries.forEach((query, index) => {
+                setTimeout(() => {
+                    query.style.transform = 'translateY(-3px)';
+                    query.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.3)';
+                    
+                    setTimeout(() => {
+                        query.style.transform = '';
+                        query.style.boxShadow = '';
+                    }, 300);
+                }, index * 150);
+            });
+        }
+
+        setInterval(simulateQueryProcessing, 4000);
+        setTimeout(simulateQueryProcessing, 1500);
+
+        // Connection line animation
+        function animateConnections() {
+            const lines = document.querySelectorAll('.connection-line');
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.style.boxShadow = '0 0 15px var(--spark-orange)';
+                    setTimeout(() => {
+                        line.style.boxShadow = '';
+                    }, 400);
+                }, index * 200);
+            });
+        }
+
+        setInterval(animateConnections, 3000);
+
+        // Process card click effect
+        document.querySelectorAll('.process-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Worker card click to show details
+        document.querySelectorAll('.worker-card').forEach(card => {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => {
+                const workerNum = card.getAttribute('data-worker');
+                const url = card.querySelector('.worker-url');
+                
+                // Copy URL
+                navigator.clipboard.writeText(url.textContent);
+                
+                // Visual feedback
+                url.style.background = 'rgba(16, 185, 129, 0.3)';
+                url.style.color = 'var(--accent-green)';
+                
+                setTimeout(() => {
+                    url.style.background = '';
+                    url.style.color = '';
+                }, 500);
+            });
+        });
+
+        // Checkpoint item hover effect
+        document.querySelectorAll('.checkpoint-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.background = 'rgba(139, 92, 246, 0.2)';
+                item.style.transform = 'scale(1.02)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.background = '';
+                item.style.transform = '';
+            });
+        });
+
+        // Simulate master activity
+        function simulateMasterActivity() {
+            const masterCard = document.querySelector('.master-card');
+            masterCard.style.boxShadow = '0 0 40px rgba(226, 90, 28, 0.25)';
+            
+            setTimeout(() => {
+                masterCard.style.boxShadow = '0 0 30px rgba(226, 90, 28, 0.15)';
+            }, 500);
+        }
+
+        setInterval(simulateMasterActivity, 5000);
+
+        // Update activity counter
+        let queryCount = 0;
+        function updateQueryCount() {
+            queryCount++;
+            const countEl = document.querySelector('.queries-count');
+            if (countEl) {
+                countEl.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    countEl.style.transform = '';
+                }, 200);
+            }
+        }
+
+        setInterval(updateQueryCount, 10000);
+    </script>
+</body>
+</html>

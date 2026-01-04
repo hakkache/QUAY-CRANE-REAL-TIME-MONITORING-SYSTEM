@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Plane - Quay Crane Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #16161f;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --accent-yellow: #fbbf24;
+            --prometheus-orange: #e6522c;
+            --grafana-orange: #f46800;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --glow-prometheus: 0 0 30px rgba(230, 82, 44, 0.4);
+            --glow-grafana: 0 0 30px rgba(244, 104, 0, 0.4);
+            --glow-blue: 0 0 30px rgba(59, 130, 246, 0.3);
+            --glow-green: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(230, 82, 44, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(244, 104, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 60%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(230, 82, 44, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(230, 82, 44, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--prometheus-orange), var(--grafana-orange));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--prometheus-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .scrape-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(230, 82, 44, 0.1);
+            border: 1px solid var(--prometheus-orange);
+            border-radius: 20px;
+        }
+
+        .scrape-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--prometheus-orange);
+            border-radius: 50%;
+            animation: scrape 2s ease-in-out infinite;
+        }
+
+        @keyframes scrape {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .scrape-text {
+            font-size: 0.875rem;
+            color: var(--prometheus-orange);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Main content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem 3rem;
+        }
+
+        /* Section title */
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--prometheus-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Metrics Sources Section */
+        .metrics-sources {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .metrics-sources::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+            border-radius: 20px 20px 0 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Source Cards Grid */
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .source-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .source-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .source-card.cadvisor::before { background: var(--accent-cyan); }
+        .source-card.kafka::before { background: var(--accent-orange); }
+        .source-card.elastic::before { background: var(--accent-green); }
+
+        .source-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--prometheus-orange);
+        }
+
+        .source-card.cadvisor:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.3); }
+        .source-card.kafka:hover { box-shadow: 0 0 30px rgba(245, 158, 11, 0.3); }
+        .source-card.elastic:hover { box-shadow: 0 0 30px rgba(16, 185, 129, 0.3); }
+
+        .source-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .source-icon {
+            font-size: 2.5rem;
+        }
+
+        .source-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .source-info .port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .metrics-list {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .metrics-list-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .metric-bullet {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .cadvisor .metric-bullet { background: var(--accent-cyan); }
+        .kafka .metric-bullet { background: var(--accent-orange); }
+        .elastic .metric-bullet { background: var(--accent-green); }
+
+        /* Flow Arrow */
+        .flow-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 0;
+            position: relative;
+        }
+
+        .arrow-line {
+            width: 4px;
+            height: 60px;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--prometheus-orange));
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .arrow-line::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 12px solid var(--prometheus-orange);
+        }
+
+        .arrow-label {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Data particles */
+        .flow-arrow .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--prometheus-orange);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--prometheus-orange);
+            animation: flowDown 1.5s ease-in-out infinite;
+        }
+
+        .flow-arrow .particle:nth-child(2) { animation-delay: 0.5s; left: -20px; }
+        .flow-arrow .particle:nth-child(3) { animation-delay: 1s; left: 20px; }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { top: 60px; opacity: 0; }
+        }
+
+        /* Prometheus Section */
+        .prometheus-section {
+            background: linear-gradient(135deg, rgba(230, 82, 44, 0.1), rgba(230, 82, 44, 0.05));
+            border: 2px solid var(--prometheus-orange);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            box-shadow: var(--glow-prometheus);
+        }
+
+        .prometheus-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .prometheus-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--prometheus-orange), #ff7043);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .prometheus-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--prometheus-orange);
+        }
+
+        .prometheus-title .port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Config Block */
+        .config-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-block-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .config-block-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--prometheus-orange);
+        }
+
+        .config-content {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.8;
+        }
+
+        .config-line {
+            padding: 0.125rem 0;
+        }
+
+        .config-key { color: var(--accent-cyan); }
+        .config-value { color: var(--accent-green); }
+        .config-comment { color: var(--text-muted); font-style: italic; }
+
+        /* Prometheus Info Grid */
+        .prometheus-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .prom-info-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .prom-info-item:hover {
+            border-color: var(--prometheus-orange);
+            transform: scale(1.02);
+        }
+
+        .prom-info-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .prom-info-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .prom-info-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--prometheus-orange);
+        }
+
+        /* Grafana Section */
+        .grafana-section {
+            background: linear-gradient(135deg, rgba(244, 104, 0, 0.1), rgba(244, 104, 0, 0.05));
+            border: 2px solid var(--grafana-orange);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: var(--glow-grafana);
+        }
+
+        .grafana-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grafana-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--grafana-orange), #ff8c00);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .grafana-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--grafana-orange);
+        }
+
+        .grafana-title .port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Dashboards Grid */
+        .dashboards-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .dashboards-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dashboards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .dashboard-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-card:hover {
+            border-color: var(--grafana-orange);
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(244, 104, 0, 0.2);
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-icon {
+            font-size: 1.5rem;
+        }
+
+        .dashboard-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dashboard-panels {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .panel-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .panel-bullet {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--grafana-orange);
+        }
+
+        /* Grafana Footer Info */
+        .grafana-footer {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .grafana-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .grafana-info-icon {
+            font-size: 1.25rem;
+        }
+
+        .grafana-info-text {
+            font-size: 0.8rem;
+        }
+
+        .grafana-info-label {
+            color: var(--text-muted);
+        }
+
+        .grafana-info-value {
+            color: var(--grafana-orange);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats Footer */
+        .stats-footer {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.orange { color: var(--prometheus-orange); }
+        .stat-value.grafana { color: var(--grafana-orange); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+        .stat-value.green { color: var(--accent-green); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sources-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .prometheus-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 1.5rem;
+            }
+
+            .scrape-indicator {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .prometheus-info {
+                grid-template-columns: 1fr;
+            }
+
+            .grafana-footer {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-footer {
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Live scraping animation */
+        .scraping-active {
+            position: relative;
+        }
+
+        .scraping-active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid var(--prometheus-orange);
+            border-radius: inherit;
+            animation: scrapeHighlight 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scrapeHighlight {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div class="logo-text">
+                    <h1>Monitoring Plane</h1>
+                    <p>Quay Crane Monitoring System</p>
+                </div>
+            </div>
+            <div class="scrape-indicator">
+                <div class="scrape-dot"></div>
+                <span class="scrape-text">Scraping every 15s</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="section-title fade-in">
+            <h2>📊 Monitoring Plane - Metrics Flow</h2>
+            <p>Complete observability stack with Prometheus metrics collection and Grafana visualization</p>
+        </section>
+
+        <!-- Metrics Sources -->
+        <div class="metrics-sources fade-in">
+            <div class="section-header">
+                <h3>📡 Metrics Sources</h3>
+                <p>Exporters and services exposing Prometheus-compatible metrics</p>
+            </div>
+
+            <div class="sources-grid">
+                <!-- cAdvisor -->
+                <div class="source-card cadvisor scraping-active">
+                    <div class="source-header">
+                        <span class="source-icon">🐳</span>
+                        <div class="source-info">
+                            <h4>cAdvisor</h4>
+                            <span class="port">Port: 8085</span>
+                        </div>
+                    </div>
+                    <div class="metrics-list">
+                        <div class="metrics-list-title">Metrics Exposed</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>container_cpu_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>container_memory_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>container_network_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>container_fs_*</div>
+                    </div>
+                </div>
+
+                <!-- Kafka Exporter -->
+                <div class="source-card kafka scraping-active">
+                    <div class="source-header">
+                        <span class="source-icon">📦</span>
+                        <div class="source-info">
+                            <h4>kafka-exporter</h4>
+                            <span class="port">Port: 9308</span>
+                        </div>
+                    </div>
+                    <div class="metrics-list">
+                        <div class="metrics-list-title">Metrics Exposed</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>kafka_broker_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>kafka_topic_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>kafka_consumer_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>kafka_partition_*</div>
+                    </div>
+                </div>
+
+                <!-- Elasticsearch -->
+                <div class="source-card elastic scraping-active">
+                    <div class="source-header">
+                        <span class="source-icon">🔍</span>
+                        <div class="source-info">
+                            <h4>Elasticsearch</h4>
+                            <span class="port">Port: 9200</span>
+                        </div>
+                    </div>
+                    <div class="metrics-list">
+                        <div class="metrics-list-title">Metrics Exposed</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>es_cluster_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>es_indices_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>es_jvm_*</div>
+                        <div class="metric-item"><span class="metric-bullet"></span>es_thread_pool_*</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow -->
+        <div class="flow-arrow">
+            <div class="arrow-line">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+            <span class="arrow-label">HTTP Scrape (every 15s)</span>
+        </div>
+
+        <!-- Prometheus Section -->
+        <div class="prometheus-section fade-in">
+            <div class="prometheus-header">
+                <div class="prometheus-logo">🔥</div>
+                <div class="prometheus-title">
+                    <h3>PROMETHEUS</h3>
+                    <span class="port">Port: 9090</span>
+                </div>
+            </div>
+
+            <div class="config-block">
+                <div class="config-block-header">
+                    <span>📄</span>
+                    <span class="config-block-title">prometheus.yml</span>
+                </div>
+                <div class="config-content">
+                    <div class="config-line"><span class="config-key">scrape_configs:</span></div>
+                    <div class="config-line">  <span class="config-comment"># Container metrics from cAdvisor</span></div>
+                    <div class="config-line">  - <span class="config-key">job_name:</span> <span class="config-value">'cadvisor'</span></div>
+                    <div class="config-line">    <span class="config-key">static_configs:</span></div>
+                    <div class="config-line">      - <span class="config-key">targets:</span> [<span class="config-value">'cadvisor:8080'</span>]</div>
+                    <div class="config-line"></div>
+                    <div class="config-line">  <span class="config-comment"># Kafka metrics</span></div>
+                    <div class="config-line">  - <span class="config-key">job_name:</span> <span class="config-value">'kafka-exporter'</span></div>
+                    <div class="config-line">    <span class="config-key">static_configs:</span></div>
+                    <div class="config-line">      - <span class="config-key">targets:</span> [<span class="config-value">'kafka-exporter:9308'</span>]</div>
+                    <div class="config-line"></div>
+                    <div class="config-line">  <span class="config-comment"># Elasticsearch metrics</span></div>
+                    <div class="config-line">  - <span class="config-key">job_name:</span> <span class="config-value">'elasticsearch'</span></div>
+                    <div class="config-line">    <span class="config-key">static_configs:</span></div>
+                    <div class="config-line">      - <span class="config-key">targets:</span> [<span class="config-value">'elasticsearch:9200'</span>]</div>
+                </div>
+            </div>
+
+            <div class="prometheus-info">
+                <div class="prom-info-item">
+                    <div class="prom-info-icon">💾</div>
+                    <div class="prom-info-label">Storage</div>
+                    <div class="prom-info-value">TSDB (7 days)</div>
+                </div>
+                <div class="prom-info-item">
+                    <div class="prom-info-icon">📁</div>
+                    <div class="prom-info-label">Volume</div>
+                    <div class="prom-info-value">prometheus_data</div>
+                </div>
+                <div class="prom-info-item">
+                    <div class="prom-info-icon">🔍</div>
+                    <div class="prom-info-label">Query</div>
+                    <div class="prom-info-value">PromQL</div>
+                </div>
+                <div class="prom-info-item">
+                    <div class="prom-info-icon">🌐</div>
+                    <div class="prom-info-label">API</div>
+                    <div class="prom-info-value">/api/v1/query</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow -->
+        <div class="flow-arrow">
+            <div class="arrow-line" style="background: linear-gradient(180deg, var(--prometheus-orange), var(--grafana-orange));">
+                <div class="particle" style="background: var(--grafana-orange);"></div>
+                <div class="particle" style="background: var(--grafana-orange);"></div>
+                <div class="particle" style="background: var(--grafana-orange);"></div>
+            </div>
+            <span class="arrow-label">PromQL Queries (Data Source)</span>
+        </div>
+
+        <!-- Grafana Section -->
+        <div class="grafana-section fade-in">
+            <div class="grafana-header">
+                <div class="grafana-logo">📈</div>
+                <div class="grafana-title">
+                    <h3>GRAFANA</h3>
+                    <span class="port">Port: 3001</span>
+                </div>
+            </div>
+
+            <div class="dashboards-container">
+                <div class="dashboards-header">📊 DASHBOARDS</div>
+                <div class="dashboards-grid">
+                    <!-- Kafka Dashboard -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-header">
+                            <span class="dashboard-icon">📦</span>
+                            <span class="dashboard-name">Kafka Cluster Dashboard</span>
+                        </div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item"><span class="panel-bullet"></span>Messages In/Out per sec</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Consumer Group Lag</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Topic Partitions</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Broker Status</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Under-replicated partitions</div>
+                        </div>
+                    </div>
+
+                    <!-- Container Dashboard -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-header">
+                            <span class="dashboard-icon">🐳</span>
+                            <span class="dashboard-name">Container Dashboard</span>
+                        </div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item"><span class="panel-bullet"></span>CPU Usage per container</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Memory Usage</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Network I/O</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Disk Usage</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Container restarts</div>
+                        </div>
+                    </div>
+
+                    <!-- Elasticsearch Dashboard -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-header">
+                            <span class="dashboard-icon">🔍</span>
+                            <span class="dashboard-name">Elasticsearch Dashboard</span>
+                        </div>
+                        <div class="dashboard-panels">
+                            <div class="panel-item"><span class="panel-bullet"></span>Cluster Health</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Index Size Growth</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>Query Latency</div>
+                            <div class="panel-item"><span class="panel-bullet"></span>JVM Heap Usage</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grafana-footer">
+                <div class="grafana-info-item">
+                    <span class="grafana-info-icon">🔐</span>
+                    <div class="grafana-info-text">
+                        <span class="grafana-info-label">Login: </span>
+                        <span class="grafana-info-value">admin / admin123</span>
+                    </div>
+                </div>
+                <div class="grafana-info-item">
+                    <span class="grafana-info-icon">🔌</span>
+                    <div class="grafana-info-text">
+                        <span class="grafana-info-label">Plugins: </span>
+                        <span class="grafana-info-value">clock-panel, piechart-panel</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="stats-footer fade-in">
+            <div class="stat-item">
+                <div class="stat-value orange">3</div>
+                <div class="stat-label">Metric Sources</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value grafana">3</div>
+                <div class="stat-label">Dashboards</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value cyan">15s</div>
+                <div class="stat-label">Scrape Interval</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value green">7d</div>
+                <div class="stat-label">Retention</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Simulate scraping activity
+        function simulateScrape() {
+            const sources = document.querySelectorAll('.source-card');
+            
+            sources.forEach((source, index) => {
+                setTimeout(() => {
+                    source.style.boxShadow = '0 0 30px rgba(230, 82, 44, 0.5)';
+                    setTimeout(() => {
+                        source.style.boxShadow = '';
+                    }, 500);
+                }, index * 200);
+            });
+        }
+
+        // Scrape every 15 seconds (simulated)
+        setInterval(simulateScrape, 15000);
+        
+        // Initial scrape after 2 seconds
+        setTimeout(simulateScrape, 2000);
+
+        // Dashboard card click effects
+        document.querySelectorAll('.dashboard-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = 'translateY(-3px)';
+                }, 150);
+            });
+        });
+
+        // Animate prometheus info items on hover
+        document.querySelectorAll('.prom-info-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.querySelector('.prom-info-icon').style.transform = 'scale(1.2)';
+                item.querySelector('.prom-info-icon').style.transition = 'transform 0.3s ease';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.querySelector('.prom-info-icon').style.transform = 'scale(1)';
+            });
+        });
+
+        // Live timestamp update
+        function updateTimestamp() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            const scrapeText = document.querySelector('.scrape-text');
+            if (scrapeText) {
+                scrapeText.textContent = `Last scrape: ${timeStr}`;
+            }
+        }
+
+        // Update every 15 seconds
+        setInterval(() => {
+            updateTimestamp();
+            simulateScrape();
+        }, 15000);
+
+        // Add particle effects to flow arrows
+        function addFlowParticles() {
+            const arrows = document.querySelectorAll('.flow-arrow');
+            arrows.forEach(arrow => {
+                const line = arrow.querySelector('.arrow-line');
+                setInterval(() => {
+                    const particle = document.createElement('div');
+                    particle.style.cssText = `
+                        position: absolute;
+                        width: 6px;
+                        height: 6px;
+                        background: var(--prometheus-orange);
+                        border-radius: 50%;
+                        box-shadow: 0 0 10px var(--prometheus-orange);
+                        animation: flowDown 1.5s ease-in-out forwards;
+                        left: ${Math.random() * 20 - 10}px;
+                    `;
+                    line.appendChild(particle);
+                    setTimeout(() => particle.remove(), 1500);
+                }, 800);
+            });
+        }
+
+        // Start particle animation
+        addFlowParticles();
+
+        // Metric items hover effect
+        document.querySelectorAll('.metric-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.color = 'var(--text-primary)';
+                item.style.paddingLeft = '0.5rem';
+                item.style.transition = 'all 0.2s ease';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.color = 'var(--text-secondary)';
+                item.style.paddingLeft = '0';
+            });
+        });
+    </script>
+</body>
+</html>
